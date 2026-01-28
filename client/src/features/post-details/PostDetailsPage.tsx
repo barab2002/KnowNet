@@ -2,53 +2,9 @@ import React from 'react';
 
 export const PostDetailsPage = () => {
   return (
-    <div className="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex flex-col font-display">
-      {/* Top Navigation Bar */}
-      <header className="sticky top-0 z-50 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md border-b border-solid border-slate-200 dark:border-[#233648] px-4 md:px-20 py-3">
-        <div className="max-w-[1200px] mx-auto flex items-center justify-between gap-4">
-          <div className="flex items-center gap-8">
-            <div className="flex items-center gap-2 text-primary">
-              <div className="size-8 bg-primary rounded-lg flex items-center justify-center text-white">
-                <span className="material-symbols-outlined">school</span>
-              </div>
-              <h2 className="text-slate-900 dark:text-white text-lg font-bold leading-tight tracking-[-0.015em]">KnowNet</h2>
-            </div>
-            <div className="hidden md:flex flex-col min-w-40 !h-10 max-w-64">
-              <div className="flex w-full flex-1 items-stretch rounded-lg h-full bg-slate-100 dark:bg-[#233648]">
-                <div className="text-slate-400 dark:text-[#92adc9] flex items-center justify-center pl-4">
-                  <span className="material-symbols-outlined text-[20px]">search</span>
-                </div>
-                <input className="form-input flex w-full min-w-0 flex-1 border-none bg-transparent focus:ring-0 text-sm placeholder:text-slate-400 dark:placeholder:text-[#92adc9]" placeholder="Search discussions..." defaultValue="" />
-              </div>
-            </div>
-          </div>
-          <nav className="hidden lg:flex items-center gap-8">
-            <a className="text-slate-600 dark:text-white text-sm font-medium hover:text-primary transition-colors" href="#">Feed</a>
-            <a className="text-slate-600 dark:text-white text-sm font-medium hover:text-primary transition-colors" href="#">Communities</a>
-            <a className="text-slate-600 dark:text-white text-sm font-medium hover:text-primary transition-colors" href="#">Resources</a>
-            <a className="text-primary text-sm font-bold flex items-center gap-1" href="#">
-              <span className="material-symbols-outlined text-[18px]">auto_awesome</span>
-              AI Insights
-            </a>
-          </nav>
-          <div className="flex items-center gap-3">
-            <button className="flex items-center justify-center rounded-lg h-10 w-10 bg-slate-100 dark:bg-[#233648] text-slate-600 dark:text-white hover:bg-slate-200 dark:hover:bg-[#324d67] transition-all">
-              <span className="material-symbols-outlined text-[20px]">notifications</span>
-            </button>
-            <button className="hidden sm:flex items-center justify-center rounded-lg h-10 w-10 bg-slate-100 dark:bg-[#233648] text-slate-600 dark:text-white hover:bg-slate-200 dark:hover:bg-[#324d67] transition-all">
-              <span className="material-symbols-outlined text-[20px]">chat_bubble</span>
-            </button>
-            <div className="h-10 w-10 rounded-full border-2 border-primary overflow-hidden">
-              <img alt="User Profile" className="w-full h-full object-cover" data-alt="Student avatar profile picture" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBHhqq2VPQX4ocfw6S-PM01pR5fowGvMJHk7DXB-f1jWgK-bIoAeIYa4IrrY7nsELX3zurGYXKF8OYHFYVik6tHVx6YRMkqepvyKAxB6v8mrb6fpsms2xrw_FC9F2CN4qVqyK6luR1yuD2AINYFTmZrk7LydDhuQLGFLeaF1bvlFZTEN3-7WwQrp9rvx_5QXfMclFzQcGLoXzmkhLSuM4x9LsEdazSpWwOzoYds0ZKFvbePqB8VyHnRlN72oNCAA3Eg3utYm3_aRQ" />
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content Area */}
-      <main className="flex-1 max-w-[960px] mx-auto w-full py-6 px-4">
-        {/* Breadcrumbs */}
-        <nav className="flex items-center gap-2 mb-6 text-sm">
+    <div className="flex flex-col font-display">
+       {/* Breadcrumbs */}
+        <nav className="flex items-center gap-2 mb-6 text-sm py-4">
           <a className="text-slate-400 dark:text-[#92adc9] hover:text-primary transition-colors" href="#">Home</a>
           <span className="text-slate-300 dark:text-[#233648] material-symbols-outlined text-[16px]">chevron_right</span>
           <a className="text-slate-400 dark:text-[#92adc9] hover:text-primary transition-colors" href="#">Computer Science 101</a>
@@ -257,10 +213,9 @@ export const PostDetailsPage = () => {
             </div>
           </div>
         </div>
-      </main>
-
+      
       {/* Floating/Sticky Comment Input */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-background-dark/80 backdrop-blur-xl border-t border-slate-200 dark:border-[#233648] p-4 z-50">
+      <div className="fixed bottom-0 left-0 right-0 lg:left-80 bg-white/80 dark:bg-background-dark/80 backdrop-blur-xl border-t border-slate-200 dark:border-[#233648] p-4 z-40">
         <div className="max-w-[960px] mx-auto flex items-end gap-3">
           <div className="flex-1 bg-slate-50 dark:bg-[#192633] border border-slate-200 dark:border-[#233648] rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-primary/50 transition-all">
             <textarea className="w-full bg-transparent border-none focus:ring-0 text-sm p-4 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-[#92adc9] resize-none" placeholder="Contribute to the academic discussion..." rows={1}></textarea>
