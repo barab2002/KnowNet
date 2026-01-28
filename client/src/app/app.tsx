@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import PostDetailsPage from '../features/post-details/PostDetailsPage';
+import SemanticSearchPage from '../features/semantic-search/SemanticSearchPage';
 
 export function App() {
   return (
@@ -7,6 +8,7 @@ export function App() {
         <Routes>
           <Route path="/" element={<HomeNavigation />} />
           <Route path="/post-details" element={<PostDetailsPage />} />
+          <Route path="/semantic-search" element={<SemanticSearchPage />} />
         </Routes>
     </BrowserRouter>
   );
