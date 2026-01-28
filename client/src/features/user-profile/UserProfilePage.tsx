@@ -50,7 +50,24 @@ export const UserProfilePage = () => {
           </div>
         </div>
 
-        {/* Tabs Navigation */}
+          {/* Create New Post Prompt (moved under profile header) */}
+          <div className="mt-4 p-8 border-2 border-dashed border-slate-200 dark:border-[#324d67] rounded-xl flex flex-col items-center justify-center gap-4 text-center">
+            <div className="size-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+              <span className="material-symbols-outlined">add_circle</span>
+            </div>
+            <div>
+              <p className="font-bold">Share something new</p>
+              <p className="text-sm text-slate-500 dark:text-[#92adc9]">Your thoughts could help fellow students.</p>
+            </div>
+            <button 
+              onClick={() => setIsCreatePostModalOpen(true)}
+              className="bg-primary text-white px-6 py-2 rounded-lg font-bold text-sm hover:scale-105 active:scale-95 transition-transform"
+            >
+              Create Post
+            </button>
+          </div>
+
+          {/* Tabs Navigation */}
         <div className="border-b border-slate-200 dark:border-[#324d67] flex gap-8">
           <a className="flex items-center gap-2 border-b-2 border-primary text-primary pb-3 pt-2" href="#">
             <span className="material-symbols-outlined text-[20px]">article</span>
@@ -133,22 +150,7 @@ export const UserProfilePage = () => {
               </div>
             </div>
           </div>
-          {/* Create New Post Prompt */}
-          <div className="mt-4 p-8 border-2 border-dashed border-slate-200 dark:border-[#324d67] rounded-xl flex flex-col items-center justify-center gap-4 text-center">
-            <div className="size-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-              <span className="material-symbols-outlined">add_circle</span>
-            </div>
-            <div>
-              <p className="font-bold">Share something new</p>
-              <p className="text-sm text-slate-500 dark:text-[#92adc9]">Your thoughts could help fellow students.</p>
-            </div>
-            <button 
-              onClick={() => setIsCreatePostModalOpen(true)}
-              className="bg-primary text-white px-6 py-2 rounded-lg font-bold text-sm hover:scale-105 active:scale-95 transition-transform"
-            >
-              Create Post
-            </button>
-          </div>
+        
         </div>
       </div>
       
