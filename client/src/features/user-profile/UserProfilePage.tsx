@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { CreatePostModal } from '../../components/CreatePostModal';
+import { user } from '../../lib/user';
 
 export const UserProfilePage = () => {
   const [isCreatePostModalOpen, setIsCreatePostModalOpen] = useState(false);
@@ -10,16 +11,16 @@ export const UserProfilePage = () => {
         {/* Profile Header */}
         <div className="bg-white dark:bg-[#192633] rounded-xl p-6 border border-slate-200 dark:border-[#324d67]">
           <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
-            <div className="relative group cursor-pointer">
-              <div className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-32 border-4 border-white dark:border-[#111a22] shadow-xl" data-alt="Detailed close-up of male student avatar" style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuBQPXmIOuVihMlkDxHc6ggkIwxa8pHz6wUHk8NzM4y3qz2wVP_CNZTIlzowu9sdjBfXkM1ubIyAhGV0EaBsO3z5qHvfxnAIM0p0Mu-mXVMHUoVs0GfrXdi0RKYWT-z2CIosIU8i4MUqONJnFRsTKncgVedx4scCoJQqJ4OS0mYVL-AA1GAt_dkoMGVhpFXn4NoEm27SN2KIBb7RAgj4WvJ4MxeFOjBBkjYG6nZcBjWXXFUUEDaaaVdZ3PvJ0y_zVcOohFdTy5QM2Q")' }}>
+              <div className="relative group cursor-pointer">
+              <div className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-32 border-4 border-white dark:border-[#111a22] shadow-xl" data-alt="Detailed close-up of male student avatar" style={{ backgroundImage: `url("${user.avatar}")` }}>
               </div>
               <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                 <span className="material-symbols-outlined text-white">photo_camera</span>
               </div>
             </div>
             <div className="flex-1 flex flex-col items-center md:items-start text-center md:text-left">
-              <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 mb-2">
-                <h2 className="text-2xl font-bold leading-tight">Alex Johnson</h2>
+                <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 mb-2">
+                <h2 className="text-2xl font-bold leading-tight">{user.fullName}</h2>
                 <button className="flex items-center justify-center gap-2 rounded-lg h-9 px-4 bg-primary text-white text-sm font-bold transition-all hover:bg-primary/90">
                   <span className="material-symbols-outlined text-sm">edit</span>
                   <span>Edit Profile</span>
