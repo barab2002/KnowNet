@@ -49,10 +49,10 @@ export const Layout = () => {
               <span className="material-icons-round">person</span>
               Profile
             </NavLink>
-            <a className="flex items-center gap-3 px-4 py-3 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-card-dark rounded-xl transition-colors" href="#">
+            <NavLink to="/settings" className={({ isActive }) => `flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${isActive ? 'bg-primary/10 text-primary font-semibold' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-card-dark'}`}>
               <span className="material-icons-round">settings</span>
               Settings
-            </a>
+            </NavLink>
           </nav>
           <div className="pt-6">
             <h3 className="px-4 text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Trending Tags</h3>
