@@ -4,7 +4,9 @@
   "license": "MIT",
   "scripts": {
     "start": "nx serve client",
-    "start:no-daemon": "cross-env NX_DAEMON=false nx serve client"
+    "start:no-daemon": "cross-env NX_DAEMON=false nx serve client",
+    "start:api": "nx serve api",
+    "start:api:no-daemon": "cross-env NX_DAEMON=false nx serve api"
   },
   "private": true,
   "devDependencies": {
