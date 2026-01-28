@@ -4,6 +4,7 @@ import SemanticSearchPage from '../features/semantic-search/SemanticSearchPage';
 import FeedPage from '../features/feed/FeedPage';
 import StudentDashboardPage from '../features/student-dashboard/StudentDashboardPage';
 import UserProfilePage from '../features/user-profile/UserProfilePage';
+import SettingsPage from '../features/settings/SettingsPage';
 import { Layout } from '../components/Layout';
 
 export function App() {
@@ -16,6 +17,7 @@ export function App() {
               <Route path="/semantic-search" element={<SemanticSearchPage />} />
               <Route path="/student-dashboard" element={<StudentDashboardPage />} />
               <Route path="/user-profile" element={<UserProfilePage />} />
+              <Route path="/settings" element={<SettingsPage />} />
           </Route>
         </Routes>
     </BrowserRouter>
