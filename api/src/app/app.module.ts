@@ -15,6 +15,7 @@ import { PostsModule } from './posts/posts.module';
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
         uri: configService.get<string>('MONGO_URI') || 'mongodb://localhost:27017/knownet',
+        serverSelectionTimeoutMS: 5000,
       }),
       inject: [ConfigService],
     }),
