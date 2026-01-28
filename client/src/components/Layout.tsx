@@ -1,5 +1,6 @@
 import React from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
+import { user } from '../lib/user';
 
 export const Layout = () => {
   return (
@@ -22,9 +23,12 @@ export const Layout = () => {
               <span className="material-icons-round">notifications</span>
               <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-background-dark"></span>
             </button>
-            <div className="w-10 h-10 rounded-full border-2 border-primary overflow-hidden">
-              <img alt="Profile" className="w-full h-full object-cover" data-alt="User profile avatar smiling young man" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCvtexDhPhar8YHNlSTSnW4u-Cr6-wLTamZ6XqrJcCGbnv8HsimarRRtRyBOXOivrORYRp5w4dPCWMc7KGnm8X9k3kPAXU9d6G4gN-ayhLHw5yHnG5Mh4wYJRpprIH9Rm8Q56nNjDmxPmfrhn5OkejcNpGBpQHyRZNnCYuEozb0BKzo27GFFl5ZPMAKFtOY3Kybd8KWCrsbCGJYc977RMJ4LdWMuB3NpS4jMZy4Vl058nKZE5lgpsUsafPMMG57ba5uOyNwIkIKMg" />
-            </div>
+            <NavLink to="/user-profile" className="flex items-center gap-3 hover:opacity-90">
+              <div className="w-10 h-10 rounded-full border-2 border-primary overflow-hidden">
+                <img alt="Profile" className="w-full h-full object-cover" data-alt="User profile avatar" src={user.avatar} />
+              </div>
+              <span className="hidden sm:inline text-sm font-medium text-slate-900 dark:text-slate-100">{user.fullName}</span>
+            </NavLink>
           </div>
         </div>
       </header>
