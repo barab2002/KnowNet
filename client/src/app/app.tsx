@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import PostDetailsPage from '../features/post-details/PostDetailsPage';
 import SemanticSearchPage from '../features/semantic-search/SemanticSearchPage';
+import FeedPage from '../features/feed/FeedPage';
 
 export function App() {
   return (
@@ -9,6 +10,7 @@ export function App() {
           <Route path="/" element={<HomeNavigation />} />
           <Route path="/post-details" element={<PostDetailsPage />} />
           <Route path="/semantic-search" element={<SemanticSearchPage />} />
+          <Route path="/feed" element={<FeedPage />} />
         </Routes>
     </BrowserRouter>
   );
