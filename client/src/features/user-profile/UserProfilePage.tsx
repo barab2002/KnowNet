@@ -16,7 +16,7 @@ export const UserProfilePage = () => {
               <span className="material-symbols-outlined">auto_awesome</span>
             </div>
             <div className="flex flex-col">
-              <h1 className="text-lg font-bold leading-tight">CampusLens</h1>
+              <h1 className="text-lg font-bold leading-tight">KnowNet</h1>
               <p className="text-slate-500 dark:text-[#92adc9] text-xs">AI Student Hub</p>
             </div>
           </div>

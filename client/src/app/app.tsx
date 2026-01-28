@@ -23,7 +23,7 @@ export function App() {
 function HomeNavigation() {
   return (
     <div className="min-h-screen bg-background-light dark:bg-background-dark text-slate-900 dark:text-white flex flex-col items-center justify-center p-8">
-      <h1 className="text-4xl font-bold mb-8">CampusLens UI Development</h1>
+      <h1 className="text-4xl font-bold mb-8">KnowNet UI Development</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-4xl w-full">
          <div className="p-6 bg-white dark:bg-card-dark rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
             <h2 className="font-bold text-lg mb-2">Development Links</h2>

@@ -11,7 +11,7 @@ export const PostDetailsPage = () => {
               <div className="size-8 bg-primary rounded-lg flex items-center justify-center text-white">
                 <span className="material-symbols-outlined">school</span>
               </div>
-              <h2 className="text-slate-900 dark:text-white text-lg font-bold leading-tight tracking-[-0.015em]">CampusLens</h2>
+              <h2 className="text-slate-900 dark:text-white text-lg font-bold leading-tight tracking-[-0.015em]">KnowNet</h2>
             </div>
             <div className="hidden md:flex flex-col min-w-40 !h-10 max-w-64">
               <div className="flex w-full flex-1 items-stretch rounded-lg h-full bg-slate-100 dark:bg-[#233648]">

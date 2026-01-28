@@ -10,7 +10,7 @@ export const FeedPage = () => {
             <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white">
               <span className="material-icons-round">auto_awesome</span>
             </div>
-            <span className="text-xl font-bold tracking-tight">CampusLens</span>
+            <span className="text-xl font-bold tracking-tight">KnowNet</span>
           </div>
           <div className="flex-1 max-w-2xl relative group">
             <span className="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors">search</span>
@@ -274,7 +274,7 @@ export const FeedPage = () => {
               <a className="hover:underline" href="#">Terms of Service</a>
               <a className="hover:underline" href="#">Campus Guidelines</a>
             </div>
-            <p>© 2024 CampusLens AI Platform</p>
+            <p>© 2024 KnowNet AI Platform</p>
           </div>
         </aside>
       </main>

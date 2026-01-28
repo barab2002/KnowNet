@@ -20,7 +20,7 @@ export const StudentDashboardPage = () => {
                     <path clipRule="evenodd" d="M24 4H6V17.3333V30.6667H24V44H42V30.6667V17.3333H24V4Z" fill="currentColor" fillRule="evenodd" />
                   </svg>
                 </div>
-                <h2 className="text-slate-900 dark:text-white text-lg font-bold leading-tight tracking-[-0.015em]">CampusLens</h2>
+                <h2 className="text-slate-900 dark:text-white text-lg font-bold leading-tight tracking-[-0.015em]">KnowNet</h2>
               </div>
               <label className="hidden md:flex flex-col min-w-40 h-10 max-w-64">
                 <div className="flex w-full flex-1 items-stretch rounded-lg h-full">
@@ -206,7 +206,7 @@ export const StudentDashboardPage = () => {
           </main>
           {/* Footer for balance */}
           <footer className="mt-auto py-8 text-center text-slate-400 dark:text-[#4f5b66] text-xs">
-            <p>© 2024 CampusLens AI Community Platform. Built for Students.</p>
+            <p>© 2024 KnowNet AI Community Platform. Built for Students.</p>
           </footer>
         </div>
       </div>

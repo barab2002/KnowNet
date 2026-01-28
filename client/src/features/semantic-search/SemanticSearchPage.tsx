@@ -12,7 +12,7 @@ export const SemanticSearchPage = () => {
                 <path clipRule="evenodd" d="M24 4H6V17.3333V30.6667H24V44H42V30.6667V17.3333H24V4Z" fill="currentColor" fillRule="evenodd" />
               </svg>
             </div>
-            <h2 className="text-lg font-bold leading-tight tracking-[-0.015em]">CampusLens</h2>
+            <h2 className="text-lg font-bold leading-tight tracking-[-0.015em]">KnowNet</h2>
           </div>
           <div className="flex flex-1 justify-end gap-8">
             <nav className="flex items-center gap-9">
