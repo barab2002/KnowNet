@@ -4,7 +4,10 @@
   "license": "MIT",
   "scripts": {
     "start": "nx serve client",
-    "start:no-daemon": "cross-env NX_DAEMON=false nx serve client"
+    "start:no-daemon": "cross-env NX_DAEMON=false nx serve client",
+    "start:api": "nx serve api",
+    "run:api": "node scripts/run-api.js",
+    "dev": "nx run-many --targets=serve --all"
   },
   "private": true,
   "devDependencies": {
@@ -50,6 +53,7 @@
     "@nestjs/common": "^11.0.0",
     "@nestjs/core": "^11.0.0",
     "@nestjs/platform-express": "^11.0.0",
+    "@nestjs/swagger": "^11.2.5",
     "axios": "^1.6.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
