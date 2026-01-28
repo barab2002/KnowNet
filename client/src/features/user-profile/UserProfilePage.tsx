@@ -1,6 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { CreatePostModal } from '../../components/CreatePostModal';
 
 export const UserProfilePage = () => {
+  const [isCreatePostModalOpen, setIsCreatePostModalOpen] = useState(false);
+
   return (
     <div className="flex justify-center py-8 px-4 overflow-y-auto">
       <div className="max-w-[800px] w-full flex flex-col gap-6">
@@ -138,10 +141,18 @@ export const UserProfilePage = () => {
               <p className="font-bold">Share something new</p>
               <p className="text-sm text-slate-500 dark:text-[#92adc9]">Your thoughts could help fellow students.</p>
             </div>
-            <button className="bg-primary text-white px-6 py-2 rounded-lg font-bold text-sm">Create Post</button>
+            <button 
+              onClick={() => setIsCreatePostModalOpen(true)}
+              className="bg-primary text-white px-6 py-2 rounded-lg font-bold text-sm hover:scale-105 active:scale-95 transition-transform"
+            >
+              Create Post
+            </button>
           </div>
         </div>
       </div>
+      
+      {/* Modals */}
+      <CreatePostModal isOpen={isCreatePostModalOpen} onClose={() => setIsCreatePostModalOpen(false)} />
     </div>
   );
 };
