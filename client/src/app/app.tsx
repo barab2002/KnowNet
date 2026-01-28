@@ -3,6 +3,7 @@ import PostDetailsPage from '../features/post-details/PostDetailsPage';
 import SemanticSearchPage from '../features/semantic-search/SemanticSearchPage';
 import FeedPage from '../features/feed/FeedPage';
 import StudentDashboardPage from '../features/student-dashboard/StudentDashboardPage';
+import UserProfilePage from '../features/user-profile/UserProfilePage';
 
 export function App() {
   return (
@@ -13,6 +14,7 @@ export function App() {
           <Route path="/semantic-search" element={<SemanticSearchPage />} />
           <Route path="/feed" element={<FeedPage />} />
           <Route path="/student-dashboard" element={<StudentDashboardPage />} />
+          <Route path="/user-profile" element={<UserProfilePage />} />
         </Routes>
     </BrowserRouter>
   );
