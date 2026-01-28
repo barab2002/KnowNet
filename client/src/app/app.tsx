@@ -1,11 +1,12 @@
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
+import PostDetailsPage from '../features/post-details/PostDetailsPage';
 
 export function App() {
   return (
     <BrowserRouter>
         <Routes>
           <Route path="/" element={<HomeNavigation />} />
-          {/* Feature routes will be added here via merges */}
+          <Route path="/post-details" element={<PostDetailsPage />} />
         </Routes>
     </BrowserRouter>
   );
