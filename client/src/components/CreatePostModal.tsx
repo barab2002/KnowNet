@@ -61,18 +61,12 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
             <p className="font-bold text-slate-900 dark:text-white text-sm">
               {user?.name || 'User'}
             </p>
-            <button
-              type="button"
-              className="flex items-center gap-1 text-slate-500 text-xs hover:text-primary transition-colors"
-            >
+            <p className="flex items-center gap-1 text-slate-500 text-xs">
               <span className="material-symbols-outlined text-[14px]">
                 public
               </span>
               Public
-              <span className="material-symbols-outlined text-[14px]">
-                arrow_drop_down
-              </span>
-            </button>
+            </p>
           </div>
         </div>
 
@@ -110,38 +104,27 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
             <div className="flex gap-1">
               <label
                 className="p-2 text-slate-500 hover:text-primary hover:bg-primary/10 rounded-lg transition-colors group cursor-pointer"
-                title="Add Image"
+                title="Add Image (Pictures Only)"
               >
                 <span className="material-symbols-outlined group-hover:scale-110 transition-transform">
                   image
                 </span>
                 <input
                   type="file"
-                  accept="image/*"
+                  accept="image/png,image/jpeg,image/jpg,image/gif,image/webp"
                   className="hidden"
                   onChange={(e) => {
-                    if (e.target.files?.[0]) setImage(e.target.files[0]);
+                    const file = e.target.files?.[0];
+                    if (file && file.type.startsWith('image/')) {
+                      setImage(file);
+                    } else {
+                      alert(
+                        'Please upload an image file only (PNG, JPG, GIF, WEBP)',
+                      );
+                    }
                   }}
                 />
               </label>
-              <button
-                type="button"
-                className="p-2 text-slate-500 hover:text-blue-500 hover:bg-blue-500/10 rounded-lg transition-colors group"
-                title="Add Poll"
-              >
-                <span className="material-symbols-outlined group-hover:scale-110 transition-transform">
-                  poll
-                </span>
-              </button>
-              <button
-                type="button"
-                className="p-2 text-slate-500 hover:text-amber-500 hover:bg-amber-500/10 rounded-lg transition-colors group"
-                title="Add Event"
-              >
-                <span className="material-symbols-outlined group-hover:scale-110 transition-transform">
-                  event
-                </span>
-              </button>
               <div className="w-[1px] h-8 bg-slate-200 dark:bg-slate-700 mx-1"></div>
               <button
                 type="button"
@@ -151,7 +134,7 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
                 <span className="material-symbols-outlined text-[20px]">
                   auto_awesome
                 </span>
-                <span className="hidden sm:inline">AI Allow</span>
+                <span className="hidden sm:inline">AI Assist</span>
               </button>
             </div>
           </div>
