@@ -7,14 +7,19 @@ interface CreatePostModalProps {
 }
 
 import { createPost } from '../api/posts';
+import { useAuth } from '../contexts/AuthContext';
 
 export const CreatePostModal: React.FC<CreatePostModalProps> = ({
   isOpen,
   onClose,
 }) => {
+  const { user } = useAuth();
   const [postText, setPostText] = useState('');
   const [image, setImage] = useState<File | undefined>();
   const [isLoading, setIsLoading] = useState(false);
+
+  const defaultAvatar =
+    'https://lh3.googleusercontent.com/aida-public/AB6AXuCvtexDhPhar8YHNlSTSnW4u-Cr6-wLTamZ6XqrJcCGbnv8HsimarRRtRyBOXOivrORYRp5w4dPCWMc7KGnm8X9k3kPAXU9d6G4gN-ayhLHw5yHnG5Mh4wYJRpprIH9Rm8Q56nNjDmxPmfrhn5OkejcNpGBpQHyRZNnCYuEozb0BKzo27GFFl5ZPMAKFtOY3Kybd8KWCrsbCGJYc977RMJ4LdWMuB3NpS4jMZy4Vl058nKZE5lgpsUsafPMMG57ba5uOyNwIkIKMg';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,7 +27,13 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
 
     try {
       setIsLoading(true);
-      await createPost({ content: postText }, image);
+      await createPost(
+        {
+          content: postText,
+          authorId: user?._id, // Include the user ID
+        },
+        image,
+      );
       setPostText('');
       setImage(undefined);
       onClose();
@@ -43,13 +54,12 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
           <div
             className="size-10 rounded-full bg-center bg-cover"
             style={{
-              backgroundImage:
-                'url("https://lh3.googleusercontent.com/aida-public/AB6AXuBCsWsvVxGh1A9EZG1KcjZ6dq1MsebVYxiH7nNJ_FHxSWkPD2RIStyqIkKd3kajExWnQpv4Nez9uwzW65XP88YobR3UiPmnkTTncIAHMJGDBSrvX6XitFO48Oi7z__M3f5rcBpVXo4IzvYf1EKPV_hyeF8GG1TjHYvNOnHlmSrPsveZQKgiUE8HokzmwNHS9e6HSrYgHu8fiRsZ7ziGwRCnwYAa_lyjd54ilQAD4yWUyfnbqN6I_HuZz6RkRosLfheslnI8zM0esg")',
+              backgroundImage: `url("${user?.profileImageUrl || defaultAvatar}")`,
             }}
           ></div>
           <div>
             <p className="font-bold text-slate-900 dark:text-white text-sm">
-              Alex Rivera
+              {user?.name || 'User'}
             </p>
             <button
               type="button"

@@ -29,6 +29,15 @@ export const getUserProfile = async (userId: string): Promise<User> => {
   return response.data;
 };
 
+export const createUser = async (user: {
+  _id: string;
+  email: string;
+  name: string;
+}): Promise<User> => {
+  const response = await axios.post<User>(API_URL, user);
+  return response.data;
+};
+
 export const updateUserProfile = async (
   userId: string,
   data: UpdateProfileDto,
