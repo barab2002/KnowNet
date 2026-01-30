@@ -103,3 +103,10 @@ export const getSavedPosts = async (
   const response = await axios.get<Post[]>(`${API_URL}/saved/${userId}`);
   return response.data;
 };
+
+export const getTotalLikesForUser = async (userId: string): Promise<number> => {
+  const response = await axios.get<{ totalLikes: number }>(
+    `${API_URL}/user/${userId}/total-likes`,
+  );
+  return response.data.totalLikes;
+};
