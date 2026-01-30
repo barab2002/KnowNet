@@ -8,5 +8,15 @@ export class CreatePostDto {
   })
   @IsString()
   @IsNotEmpty()
+  @IsString()
+  @IsNotEmpty()
   content: string;
+
+  @ApiProperty({
+    description: 'The ID of the user creating the post',
+    example: 'user-123',
+    required: false, // Optional for now to maintain backward compatibility during migration
+  })
+  @IsString()
+  authorId?: string;
 }
