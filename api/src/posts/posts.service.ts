@@ -80,7 +80,14 @@ export class PostsService {
       }
     }
 
-    // Fallback: If no AI tags generated, use simple keyword extraction (The "Free AI")
+    // Manual Hashtag Extraction (User-defined tags)
+    const hashtags = content.match(/#(\w+)/g);
+    if (hashtags) {
+      const extractedTags = hashtags.map((tag) => tag.substring(1)); // Remove '#'
+      tags = [...new Set([...tags, ...extractedTags])];
+    }
+
+    // Fallback: If no AI tags and no hashtags, use simple keyword extraction (The "Free AI")
     if (tags.length === 0) {
       this.logger.warn('Using fallback keyword extraction for tags');
       const keywords = content
