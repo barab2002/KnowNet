@@ -7,6 +7,7 @@ export interface Post {
   createdAt: string;
   updatedAt: string;
   imageUrl?: string;
+  authorId?: string; // ID of the user who created the post
   likes: string[];
   savedBy: string[];
   comments: {
@@ -18,6 +19,7 @@ export interface Post {
 
 export interface CreatePostDto {
   content: string;
+  authorId?: string;
 }
 
 // In development, Vite will proxy /api to http://localhost:3000
@@ -36,6 +38,9 @@ export const createPost = async (
   if (image) {
     const formData = new FormData();
     formData.append('content', data.content);
+    if (data.authorId) {
+      formData.append('authorId', data.authorId);
+    }
     formData.append('image', image);
     const response = await axios.post<Post>(API_URL, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
