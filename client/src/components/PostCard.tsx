@@ -55,13 +55,23 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onUpdate }) => {
         <div className="flex justify-between items-start mb-4">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-full overflow-hidden bg-slate-200">
-              <span className="material-icons-round text-slate-400 text-3xl flex items-center justify-center h-full">
-                person
-              </span>
+              {post.authorId === currentUserId && user?.profileImageUrl ? (
+                <img
+                  src={user.profileImageUrl}
+                  alt="Author avatar"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="material-icons-round text-slate-400 text-3xl flex items-center justify-center h-full">
+                  person
+                </span>
+              )}
             </div>
             <div>
               <h4 className="font-bold text-slate-900 dark:text-white leading-tight">
-                Anonymous User
+                {post.authorId === currentUserId
+                  ? user?.name || 'You'
+                  : 'KnowNet User'}
               </h4>
               <p className="text-xs text-slate-500">
                 {new Date(post.createdAt).toLocaleDateString()}
