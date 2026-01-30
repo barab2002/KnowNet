@@ -37,19 +37,37 @@ export class PostsService {
   ): Promise<Post> {
     const { content, authorId } = createPostDto;
     let tags: string[] = [];
+    let aiStatus = 'none';
 
-    // AI Tag Generation Logic
+    // 1. Manual Hashtag Extraction (User-defined tags) - DO THIS FIRST
+    const hashtagsMatch = content.match(/#(\w+)/g);
+    const userHashtags = hashtagsMatch
+      ? hashtagsMatch.map((tag) => tag.substring(1))
+      : [];
+
+    // 2. AI Tag Generation Logic
     if (this.genAI) {
       try {
         const model = this.genAI.getGenerativeModel({
           model: 'gemini-1.5-flash',
         });
 
-        const prompt = `You are an expert at categorizing content for a campus social network called KnowNet. 
-        Extract 2-4 highly relevant tags from the following content. 
-        Focus on academic subjects, campus life, or specific topics mentioned.
-        Return ONLY a comma-separated list of tags (e.g., "Physics, Study Tips, Campus Events").
-        Do not include hashtags or extra text.
+        const prompt = `You are a logical content analyzer for the KnowNet campus network.
+        TASK:
+        1. Read the provided content (and image if present).
+        2. Identify the core intellectual or social value of the post.
+        3. Provide 2-3 logical categories (tags) that would help a student find this content.
+        
+        RULES:
+        - Be ultra-relevant. If it's a question, use tags like "Question" or the subject.
+        - If the user already used these hashtags: [${userHashtags.join(', ')}], DO NOT REPEAT THEM.
+        - Return ONLY a comma-separated list of NEW tags.
+        - No hashtags, no explanations, no filler.
+        
+        LOGIC EXAMPLE:
+        Content: "Anyone have notes for CS101 recursion?" 
+        Logical Tags: Computer Science, Study Materials, Recursion
+        
         Content: ${content}`;
 
         let result;
@@ -69,32 +87,34 @@ export class PostsService {
 
         const generatedText = result.response.text();
         if (generatedText) {
-          tags = generatedText
+          const aiTags = generatedText
             .split(',')
             .map((tag) => tag.trim())
             .filter((tag) => tag.length > 0)
             .slice(0, 5);
+
+          tags = [...aiTags];
+          aiStatus = 'success';
         }
       } catch (error) {
         this.logger.error('Failed to generate tags with Gemini', error);
+        aiStatus = 'failed';
       }
+    } else {
+      aiStatus = 'failed';
     }
 
-    // Manual Hashtag Extraction (User-defined tags)
-    const hashtags = content.match(/#(\w+)/g);
-    if (hashtags) {
-      const extractedTags = hashtags.map((tag) => tag.substring(1)); // Remove '#'
-      tags = [...new Set([...tags, ...extractedTags])];
-    }
+    // 3. Merge All (User Hashtags + AI Tags) - Ensure user hashtags are ALWAYS included
+    tags = [...new Set([...userHashtags, ...tags])];
 
-    // Fallback: If no AI tags and no hashtags, use simple keyword extraction (The "Free AI")
+    // Fallback: If no AI tags and no hashtags, use simple keyword extraction
     if (tags.length === 0) {
       this.logger.warn('Using fallback keyword extraction for tags');
       const keywords = content
         .toLowerCase()
         .replace(/[^\w\s]/g, '')
         .split(/\s+/)
-        .filter((word) => word.length > 4) // Only words longer than 4 chars
+        .filter((word) => word.length > 4)
         .filter(
           (word) =>
             !['about', 'there', 'their', 'would', 'could', 'should'].includes(
@@ -102,9 +122,7 @@ export class PostsService {
             ),
         );
 
-      // Get unique keywords, take top 3
       tags = [...new Set(keywords)].slice(0, 3);
-
       if (tags.length === 0) tags = ['General', 'Community'];
     }
 
@@ -113,6 +131,7 @@ export class PostsService {
       tags,
       imageUrl,
       authorId,
+      aiStatus,
     });
 
     if (authorId) {

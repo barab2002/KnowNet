@@ -38,6 +38,9 @@ export class Post {
     content: string;
     createdAt: Date;
   }[];
+
+  @Prop({ type: String, enum: ['success', 'failed', 'none'], default: 'none' })
+  aiStatus: string;
 }
 
 export const PostSchema = SchemaFactory.createForClass(Post);
