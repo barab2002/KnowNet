@@ -1,0 +1,152 @@
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from 'react';
+import {
+  login as apiLogin,
+  register as apiRegister,
+  logout as apiLogout,
+  LoginCredentials,
+  RegisterData,
+  AuthResponse,
+} from '../api/auth';
+
+interface User {
+  _id: string;
+  email: string;
+  name: string;
+  profileImageUrl?: string;
+}
+
+interface AuthContextType {
+  user: User | null;
+  token: string | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  login: (credentials: LoginCredentials) => Promise<void>;
+  register: (data: RegisterData) => Promise<void>;
+  logout: () => void;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+const AUTH_STORAGE_KEY = 'knownet_auth';
+const REMEMBER_ME_KEY = 'knownet_remember_me';
+
+interface AuthStorage {
+  user: User;
+  token: string;
+}
+
+export const AuthProvider: React.FC<{ children: ReactNode }> = ({
+  children,
+}) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Load auth state from localStorage on mount
+  useEffect(() => {
+    const loadAuthState = () => {
+      try {
+        const rememberMe = localStorage.getItem(REMEMBER_ME_KEY) === 'true';
+        if (rememberMe) {
+          const authData = localStorage.getItem(AUTH_STORAGE_KEY);
+          if (authData) {
+            const parsed: AuthStorage = JSON.parse(authData);
+            setUser(parsed.user);
+            setToken(parsed.token);
+          }
+        } else {
+          // Check sessionStorage for current session
+          const sessionAuth = sessionStorage.getItem(AUTH_STORAGE_KEY);
+          if (sessionAuth) {
+            const parsed: AuthStorage = JSON.parse(sessionAuth);
+            setUser(parsed.user);
+            setToken(parsed.token);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load auth state:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadAuthState();
+  }, []);
+
+  const saveAuthState = (authData: AuthResponse, rememberMe: boolean) => {
+    const storage: AuthStorage = {
+      user: authData.user,
+      token: authData.token,
+    };
+
+    if (rememberMe) {
+      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(storage));
+      localStorage.setItem(REMEMBER_ME_KEY, 'true');
+    } else {
+      sessionStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(storage));
+      localStorage.setItem(REMEMBER_ME_KEY, 'false');
+    }
+
+    setUser(authData.user);
+    setToken(authData.token);
+  };
+
+  const clearAuthState = () => {
+    localStorage.removeItem(AUTH_STORAGE_KEY);
+    localStorage.removeItem(REMEMBER_ME_KEY);
+    sessionStorage.removeItem(AUTH_STORAGE_KEY);
+    setUser(null);
+    setToken(null);
+  };
+
+  const login = async (credentials: LoginCredentials) => {
+    try {
+      const response = await apiLogin(credentials);
+      saveAuthState(response, credentials.rememberMe || false);
+    } catch (error) {
+      console.error('Login failed:', error);
+      throw error;
+    }
+  };
+
+  const register = async (data: RegisterData) => {
+    try {
+      const response = await apiRegister(data);
+      saveAuthState(response, true); // Auto remember after registration
+    } catch (error) {
+      console.error('Registration failed:', error);
+      throw error;
+    }
+  };
+
+  const logout = () => {
+    apiLogout();
+    clearAuthState();
+  };
+
+  const value: AuthContextType = {
+    user,
+    token,
+    isAuthenticated: !!user && !!token,
+    isLoading,
+    login,
+    register,
+    logout,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
