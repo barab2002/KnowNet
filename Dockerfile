@@ -1,23 +1,33 @@
-# Use Node.js LTS (Alpine)
-FROM node:22-alpine
+# Build Stage
+FROM node:22-alpine AS builder
 
-# Set working directory
 WORKDIR /app
 
-# Copy package files
+# Copy deps
 COPY package.json package-lock.json ./
-
-# Install dependencies
 RUN npm ci
 
-# Copy source code
+# Copy source
 COPY . .
 
-# Build the API
+# Build API
 RUN npx nx build api
 
-# Expose the API port
+# Production Stage
+FROM node:22-alpine AS runner
+
+WORKDIR /app
+ENV NODE_ENV production
+
+# Copy built assets and package files from the build output
+# Nx generates a package.json (and optional lockfile) in dist/api
+COPY --from=builder /app/dist/api ./
+
+# Install only production dependencies for the specific app
+RUN npm ci --omit=dev
+
+# Expose port
 EXPOSE 3000
 
-# Start the application
-CMD ["node", "dist/api/main.js"]
+# Start
+CMD ["node", "main.js"]
