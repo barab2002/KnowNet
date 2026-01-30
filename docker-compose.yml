@@ -9,6 +9,8 @@ services:
     volumes:
       - mongo_data:/data/db
     restart: always
+    networks:
+      - knownet-network
 
   mongo-express:
     image: mongo-express
@@ -22,18 +24,25 @@ services:
       ME_CONFIG_MONGODB_URL: mongodb://mongo:27017/
     depends_on:
       - mongo
+    networks:
+      - knownet-network
 
   api:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: knownet-api
     ports:
       - "3000:3000"
     environment:
       - MONGO_URI=mongodb://mongo:27017/knownet
       - PORT=3000
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
     depends_on:
       - mongo
     restart: always
+    networks:
+      - knownet-network
 
   client:
     build:
@@ -45,6 +54,12 @@ services:
     depends_on:
       - api
     restart: always
+    networks:
+      - knownet-network
 
 volumes:
   mongo_data:
+
+networks:
+  knownet-network:
+    driver: bridge
