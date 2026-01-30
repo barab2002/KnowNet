@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { User, UpdateProfileDto, updateUserProfile } from '../api/users';
+import { useAuth } from '../contexts/AuthContext';
 
 interface EditProfileModalProps {
   isOpen: boolean;
@@ -14,6 +15,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
   user,
   onUpdate,
 }) => {
+  const { updateUser } = useAuth();
   const [formData, setFormData] = useState<UpdateProfileDto>({
     name: '',
     email: '',
@@ -42,6 +44,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
     setIsSubmitting(true);
     try {
       await updateUserProfile(user._id, formData);
+      updateUser({ name: formData.name, email: formData.email }); // Sync global auth state
       onUpdate();
       onClose();
     } catch (error) {

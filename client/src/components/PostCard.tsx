@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Post, toggleLike, toggleSave, addComment } from '../api/posts';
+import { useAuth } from '../contexts/AuthContext';
 
 interface PostCardProps {
   post: Post;
@@ -10,14 +11,16 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onUpdate }) => {
   // We'll use local state for immediate feedback but rely on props for source of truth
   const [commentText, setCommentText] = useState('');
   const [showComments, setShowComments] = useState(false);
-  const currentUserId = 'current-user-id'; // Mock ID
+  const { user } = useAuth();
+  const currentUserId = user?._id || '';
 
   const isLiked = post.likes.includes(currentUserId);
   const isSaved = post.savedBy.includes(currentUserId);
 
   const handleLike = async () => {
     try {
-      await toggleLike(post._id);
+      if (!currentUserId) return;
+      await toggleLike(post._id, currentUserId);
       if (onUpdate) onUpdate();
     } catch (err) {
       console.error('Failed to toggle like', err);
@@ -26,7 +29,8 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onUpdate }) => {
 
   const handleSave = async () => {
     try {
-      await toggleSave(post._id);
+      if (!currentUserId) return;
+      await toggleSave(post._id, currentUserId);
       if (onUpdate) onUpdate();
     } catch (err) {
       console.error('Failed to toggle save', err);
@@ -35,9 +39,9 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onUpdate }) => {
 
   const handleComment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!commentText.trim()) return;
+    if (!commentText.trim() || !currentUserId) return;
     try {
-      await addComment(post._id, commentText);
+      await addComment(post._id, commentText, currentUserId);
       setCommentText('');
       if (onUpdate) onUpdate();
     } catch (err) {
