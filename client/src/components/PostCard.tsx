@@ -83,8 +83,8 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onUpdate }) => {
           </button>
         </div>
 
-        {/* AI Tags */}
-        <div className="flex flex-wrap gap-2 mb-4">
+        {/* AI Tags Section */}
+        <div className="flex flex-wrap items-center gap-2 mb-4">
           {post.tags.map((tag) => (
             <span
               key={tag}
@@ -96,6 +96,28 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onUpdate }) => {
               {tag.toUpperCase()}
             </span>
           ))}
+
+          {/* AI Status Notification */}
+          {post.aiStatus === 'failed' && (
+            <div
+              className="flex items-center gap-1 px-2 py-1 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 text-[9px] font-bold rounded-md border border-amber-200 dark:border-amber-800/50 cursor-help"
+              title="AI model was unreachable. Used smart keyword extraction instead."
+            >
+              <span className="material-icons-round text-[10px]">
+                error_outline
+              </span>
+              FALLBACK TAGS
+            </div>
+          )}
+          {post.aiStatus === 'success' && (
+            <div
+              className="flex items-center gap-1 px-2 py-1 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 text-[9px] font-bold rounded-md border border-emerald-200 dark:border-emerald-800/50"
+              title="Tags generated logically by KnowNet AI"
+            >
+              <span className="material-icons-round text-[10px]">verified</span>
+              AI POWERED
+            </div>
+          )}
         </div>
 
         <p className="text-slate-800 dark:text-slate-200 text-[15px] leading-relaxed mb-4">

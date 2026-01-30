@@ -15,6 +15,7 @@ export interface Post {
     content: string;
     createdAt: string;
   }[];
+  aiStatus: 'success' | 'failed' | 'none';
 }
 
 export interface CreatePostDto {
