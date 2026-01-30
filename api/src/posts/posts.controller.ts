@@ -64,6 +64,12 @@ export class PostsController {
     return this.postsService.getSavedPosts(userId);
   }
 
+  @Get('user/:userId/total-likes')
+  @ApiOperation({ summary: 'Get total likes received by user' })
+  async getTotalLikes(@Param('userId') userId: string) {
+    return { totalLikes: await this.postsService.getTotalLikesForUser(userId) };
+  }
+
   @Post()
   @UseInterceptors(FileInterceptor('image'))
   @ApiOperation({ summary: 'Create a new post with optional image' })

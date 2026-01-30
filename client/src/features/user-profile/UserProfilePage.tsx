@@ -6,6 +6,7 @@ import {
   getMyPosts,
   getLikedPosts,
   getSavedPosts,
+  getTotalLikesForUser,
   Post,
 } from '../../api/posts';
 import { getUserProfile, uploadProfileImage, User } from '../../api/users';
@@ -34,7 +35,8 @@ export const UserProfilePage = () => {
     setIsLoadingUser(true);
     try {
       const userData = await getUserProfile(currentUserId);
-      setUser(userData);
+      const actualLikes = await getTotalLikesForUser(currentUserId);
+      setUser({ ...userData, likesReceived: actualLikes });
     } catch (error) {
       console.error(
         'Failed to fetch user profile, using auth fallback:',
@@ -42,6 +44,9 @@ export const UserProfilePage = () => {
       );
       // Fallback to auth context data if backend profile missing
       if (authUser) {
+        const actualLikes = await getTotalLikesForUser(currentUserId).catch(
+          () => 0,
+        );
         setUser({
           _id: authUser._id,
           name: authUser.name,
@@ -49,7 +54,7 @@ export const UserProfilePage = () => {
           profileImageUrl: authUser.profileImageUrl,
           joinedDate: new Date().toISOString(),
           postsCount: 0,
-          likesReceived: 0,
+          likesReceived: actualLikes,
           aiSummariesCount: 0,
           bio: authUser.bio || 'Welcome to KnowNet!',
           major: authUser.major,
