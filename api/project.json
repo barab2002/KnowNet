@@ -43,20 +43,24 @@
       "executor": "nx:noop"
     },
     "serve": {
-      "continuous": true,
-      "executor": "@nx/js:node",
+      "executor": "nx:run-commands",
       "defaultConfiguration": "development",
-      "dependsOn": ["build"],
       "options": {
-        "buildTarget": "api:build",
-        "runBuildTargetDependencies": false
+        "commands": [
+          "webpack-cli build --node-env=development --watch",
+          "nodemon --watch ../dist/api --delay 1 --exec node ../dist/api/main.js"
+        ],
+        "parallel": true,
+        "cwd": "api"
       },
       "configurations": {
         "development": {
-          "buildTarget": "api:build:development"
-        },
-        "production": {
-          "buildTarget": "api:build:production"
+          "commands": [
+            "webpack-cli build --node-env=development --watch",
+            "nodemon --watch ../dist/api --delay 1 --exec node ../dist/api/main.js"
+          ],
+          "parallel": true,
+          "cwd": "api"
         }
       }
     }
