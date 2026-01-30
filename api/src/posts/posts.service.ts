@@ -214,4 +214,14 @@ export class PostsService {
     const result = await this.postModel.distinct('tags').exec();
     return result;
   }
+
+  async getTotalLikesForUser(userId: string): Promise<number> {
+    const result = await this.postModel.aggregate([
+      { $match: { authorId: userId } },
+      { $project: { likesCount: { $size: '$likes' } } },
+      { $group: { _id: null, totalLikes: { $sum: '$likesCount' } } },
+    ]);
+
+    return result.length > 0 ? result[0].totalLikes : 0;
+  }
 }
