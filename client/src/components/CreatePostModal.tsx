@@ -13,6 +13,7 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
   onClose,
 }) => {
   const [postText, setPostText] = useState('');
+  const [image, setImage] = useState<File | undefined>();
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -21,8 +22,9 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
 
     try {
       setIsLoading(true);
-      await createPost({ content: postText });
+      await createPost({ content: postText }, image);
       setPostText('');
+      setImage(undefined);
       onClose();
       // Optional: Trigger feed refresh (would need a callback or global state)
     } catch (error) {
@@ -77,44 +79,71 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
         {/* Action Toolbar */}
         <div className="flex flex-wrap gap-2 items-center justify-between border-t border-slate-100 dark:border-slate-800 pt-4">
           <div className="flex gap-1">
-            <button
-              type="button"
-              className="p-2 text-slate-500 hover:text-primary hover:bg-primary/10 rounded-lg transition-colors group"
-              title="Add Image"
-            >
-              <span className="material-symbols-outlined group-hover:scale-110 transition-transform">
-                image
-              </span>
-            </button>
-            <button
-              type="button"
-              className="p-2 text-slate-500 hover:text-blue-500 hover:bg-blue-500/10 rounded-lg transition-colors group"
-              title="Add Poll"
-            >
-              <span className="material-symbols-outlined group-hover:scale-110 transition-transform">
-                poll
-              </span>
-            </button>
-            <button
-              type="button"
-              className="p-2 text-slate-500 hover:text-amber-500 hover:bg-amber-500/10 rounded-lg transition-colors group"
-              title="Add Event"
-            >
-              <span className="material-symbols-outlined group-hover:scale-110 transition-transform">
-                event
-              </span>
-            </button>
-            <div className="w-[1px] h-8 bg-slate-200 dark:bg-slate-700 mx-1"></div>
-            <button
-              type="button"
-              className="p-2 text-primary font-bold text-xs flex items-center gap-1 hover:bg-primary/10 rounded-lg transition-colors"
-              title="AI Assist"
-            >
-              <span className="material-symbols-outlined text-[20px]">
-                auto_awesome
-              </span>
-              <span className="hidden sm:inline">AI Allow</span>
-            </button>
+            {/* Image Preview */}
+            {image && (
+              <div className="relative mb-4">
+                <img
+                  src={URL.createObjectURL(image)}
+                  alt="Preview"
+                  className="w-full h-48 object-cover rounded-xl"
+                />
+                <button
+                  type="button"
+                  onClick={() => setImage(undefined)}
+                  className="absolute top-2 right-2 bg-black/50 text-white rounded-full p-1 hover:bg-black/70"
+                >
+                  <span className="material-symbols-outlined">close</span>
+                </button>
+              </div>
+            )}
+
+            <div className="flex gap-1">
+              <label
+                className="p-2 text-slate-500 hover:text-primary hover:bg-primary/10 rounded-lg transition-colors group cursor-pointer"
+                title="Add Image"
+              >
+                <span className="material-symbols-outlined group-hover:scale-110 transition-transform">
+                  image
+                </span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    if (e.target.files?.[0]) setImage(e.target.files[0]);
+                  }}
+                />
+              </label>
+              <button
+                type="button"
+                className="p-2 text-slate-500 hover:text-blue-500 hover:bg-blue-500/10 rounded-lg transition-colors group"
+                title="Add Poll"
+              >
+                <span className="material-symbols-outlined group-hover:scale-110 transition-transform">
+                  poll
+                </span>
+              </button>
+              <button
+                type="button"
+                className="p-2 text-slate-500 hover:text-amber-500 hover:bg-amber-500/10 rounded-lg transition-colors group"
+                title="Add Event"
+              >
+                <span className="material-symbols-outlined group-hover:scale-110 transition-transform">
+                  event
+                </span>
+              </button>
+              <div className="w-[1px] h-8 bg-slate-200 dark:bg-slate-700 mx-1"></div>
+              <button
+                type="button"
+                className="p-2 text-primary font-bold text-xs flex items-center gap-1 hover:bg-primary/10 rounded-lg transition-colors"
+                title="AI Assist"
+              >
+                <span className="material-symbols-outlined text-[20px]">
+                  auto_awesome
+                </span>
+                <span className="hidden sm:inline">AI Allow</span>
+              </button>
+            </div>
           </div>
         </div>
 

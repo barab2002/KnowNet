@@ -1,11 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { getPosts, Post } from '../../api/posts';
+import { PostCard } from '../../components/PostCard';
+import { CreatePostModal } from '../../components/CreatePostModal';
 
 export const FeedPage = () => {
   const [posts, setPosts] = useState<Post[]>([]);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
+  const fetchPosts = () => {
+    getPosts().then(setPosts).catch(console.error);
+  };
 
   useEffect(() => {
-    getPosts().then(setPosts).catch(console.error);
+    fetchPosts();
   }, []);
 
   return (
@@ -19,85 +26,48 @@ export const FeedPage = () => {
               <img
                 alt="Profile"
                 className="w-full h-full object-cover"
-                data-alt="User profile avatar smiling young man"
                 src="https://lh3.googleusercontent.com/aida-public/AB6AXuD_4nrruZU9T_Pv6aK5TQQkd6xu7pEDZYSguwuvgD44WmsF1nBVE5Y1BfbeI287Lp8WIb04g379pjrWaevtFhoLTzKM4-7rT_Y_YtuKZY9FWm8HaWkEmf3uHTrAgFkyRE2ycyTSY69scwpDHmfhH1Wl9F9NtoBdEknQDmSr7bHUjz0umMjxRarNCsWQFEycdabga1gABPA2K14wGzkfBowJXzCkHJkRU6HFzcmoYx9whP755nkbEaXmUizVsXySydPKFAtRtkJWpA"
               />
             </div>
-            <button className="flex-1 bg-slate-100 dark:bg-background-dark/50 text-slate-500 text-left px-5 rounded-full text-sm hover:bg-slate-200 dark:hover:bg-background-dark transition-colors">
+            <button
+              onClick={() => setIsCreateModalOpen(true)}
+              className="flex-1 bg-slate-100 dark:bg-background-dark/50 text-slate-500 text-left px-5 rounded-full text-sm hover:bg-slate-200 dark:hover:bg-background-dark transition-colors"
+            >
               Share something smart with your peers...
             </button>
           </div>
-          {/* ... buttons ... */}
           <div className="flex justify-between mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
-            {/* ... existing buttons ... */}
             <div className="flex gap-2">
-              <button className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors">
+              <button
+                onClick={() => setIsCreateModalOpen(true)}
+                className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+              >
                 <span className="material-icons-round text-blue-500 text-sm">
                   image
                 </span>
                 Media
               </button>
-              {/* ... */}
             </div>
-            <button className="bg-primary text-white px-5 py-1.5 rounded-full text-sm font-semibold hover:opacity-90 transition-opacity">
+            <button
+              onClick={() => setIsCreateModalOpen(true)}
+              className="bg-primary text-white px-5 py-1.5 rounded-full text-sm font-semibold hover:opacity-90 transition-opacity"
+            >
               Post
             </button>
           </div>
         </div>
 
         {posts.map((post) => (
-          <article
-            key={post._id}
-            className="bg-white dark:bg-card-dark rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden hover:border-primary/50 transition-colors"
-          >
-            <div className="p-5">
-              <div className="flex justify-between items-start mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-full overflow-hidden bg-slate-200">
-                    {/* Placeholder Avatar */}
-                    <span className="material-icons-round text-slate-400 text-3xl">
-                      person
-                    </span>
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-slate-900 dark:text-white leading-tight">
-                      Anonymous User
-                    </h4>
-                    <p className="text-xs text-slate-500">
-                      {new Date(post.createdAt).toLocaleDateString()}
-                    </p>
-                  </div>
-                </div>
-              </div>
-              {/* AI Tags */}
-              <div className="flex flex-wrap gap-2 mb-4">
-                {post.tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="flex items-center gap-1 px-2.5 py-1 bg-primary/10 text-primary text-[10px] font-bold rounded-lg border border-primary/20"
-                  >
-                    <span className="material-icons-round text-[12px]">
-                      auto_awesome
-                    </span>{' '}
-                    {tag.toUpperCase()}
-                  </span>
-                ))}
-              </div>
-              <p className="text-slate-800 dark:text-slate-200 text-[15px] leading-relaxed mb-4">
-                {post.content}
-              </p>
-
-              <div className="flex items-center gap-6 pt-4 border-t border-slate-100 dark:border-slate-800">
-                <button className="flex items-center gap-1.5 text-slate-500 hover:text-red-500 transition-colors">
-                  <span className="material-icons-round text-lg">
-                    favorite_border
-                  </span>
-                  <span className="text-sm font-medium">0</span>
-                </button>
-              </div>
-            </div>
-          </article>
+          <PostCard key={post._id} post={post} onUpdate={fetchPosts} />
         ))}
+
+        <CreatePostModal
+          isOpen={isCreateModalOpen}
+          onClose={() => {
+            setIsCreateModalOpen(false);
+            fetchPosts();
+          }}
+        />
 
         {/* Existing Static Posts (Optional: keep or remove, I'll remove for now to prove dynamic working) */}
 
