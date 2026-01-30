@@ -59,6 +59,114 @@ export class PostsService {
   }
 
   async findAll(): Promise<Post[]> {
-    return this.postModel.find().exec();
+    return this.postModel.find().sort({ createdAt: -1 }).exec();
+  }
+
+  async createWithImage(
+    createPostDto: CreatePostDto,
+    imageUrl?: string,
+  ): Promise<Post> {
+    const { content } = createPostDto;
+    let tags: string[] = [];
+
+    // AI Tag Generation Logic
+    if (this.openai) {
+      try {
+        const completion = await this.openai.chat.completions.create({
+          messages: [
+            {
+              role: 'system',
+              content:
+                "You are a helpful assistant that extracts tags from text. Return only the tags as a comma-separated list, e.g. 'tech, ai, coding'. Do not include any other text.",
+            },
+            { role: 'user', content: content },
+          ],
+          model: 'gpt-3.5-turbo',
+        });
+
+        const generatedText = completion.choices[0].message.content;
+        if (generatedText) {
+          tags = generatedText.split(',').map((tag) => tag.trim());
+        }
+      } catch (error) {
+        this.logger.error('Failed to generate tags with OpenAI', error);
+      }
+    } else {
+      // Mock fallback if no API key
+      this.logger.warn('OPENAI_API_KEY not found, using mock tags');
+      tags = ['mock-tag', 'knownet'];
+    }
+
+    const createdPost = new this.postModel({
+      content,
+      tags,
+      imageUrl,
+    });
+    return createdPost.save();
+  }
+
+  async toggleLike(postId: string, userId: string): Promise<Post> {
+    const post = await this.postModel.findById(postId);
+    if (!post) throw new Error('Post not found');
+
+    const index = post.likes.indexOf(userId);
+    if (index === -1) {
+      post.likes.push(userId);
+    } else {
+      post.likes.splice(index, 1);
+    }
+    return post.save();
+  }
+
+  async addComment(
+    postId: string,
+    userId: string,
+    content: string,
+  ): Promise<Post> {
+    const post = await this.postModel.findById(postId);
+    if (!post) throw new Error('Post not found');
+
+    post.comments.push({ userId, content, createdAt: new Date() });
+    return post.save();
+  }
+
+  async toggleSave(postId: string, userId: string): Promise<Post> {
+    const post = await this.postModel.findById(postId);
+    if (!post) throw new Error('Post not found');
+
+    const index = post.savedBy.indexOf(userId);
+    if (index === -1) {
+      post.savedBy.push(userId);
+    } else {
+      post.savedBy.splice(index, 1);
+    }
+    return post.save();
+  }
+
+  async getCreatePostDto(postId: string) {
+    return this.postModel.findById(postId);
+  }
+
+  async getPostsByUser(userId: string): Promise<Post[]> {
+    return this.postModel.find({}).sort({ createdAt: -1 }).exec(); // Simplified for now since we don't have authorId on post yet, logic update needed if we want strict ownership
+  }
+
+  async getLikedPosts(userId: string): Promise<Post[]> {
+    return this.postModel
+      .find({ likes: userId })
+      .sort({ createdAt: -1 })
+      .exec();
+  }
+
+  async getSavedPosts(userId: string): Promise<Post[]> {
+    return this.postModel
+      .find({ savedBy: userId })
+      .sort({ createdAt: -1 })
+      .exec();
+  }
+
+  async getUniqueTags(): Promise<string[]> {
+    const result = await this.postModel.distinct('tags').exec();
+    return result;
   }
 }
