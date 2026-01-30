@@ -37,6 +37,7 @@ export class PostsService {
   ): Promise<Post> {
     const { content, authorId } = createPostDto;
     let tags: string[] = [];
+    let aiStatus = 'none';
 
     // 1. Manual Hashtag Extraction (User-defined tags) - DO THIS FIRST
     const hashtagsMatch = content.match(/#(\w+)/g);
@@ -51,14 +52,21 @@ export class PostsService {
           model: 'gemini-1.5-flash',
         });
 
-        const prompt = `You are an expert at categorizing content for a campus social network called KnowNet. 
-        The user has already provided these tags: [${userHashtags.join(', ')}].
+        const prompt = `You are a logical content analyzer for the KnowNet campus network.
+        TASK:
+        1. Read the provided content (and image if present).
+        2. Identify the core intellectual or social value of the post.
+        3. Provide 2-3 logical categories (tags) that would help a student find this content.
         
-        Please provide 2-3 ADDITIONAL highly relevant tags that add more context or categorization depth.
-        Focus on academic subjects, campus life, or high-level themes.
-        Return ONLY a comma-separated list of NEW tags.
-        Do not repeat the user's tags.
-        Do not include hashtags or extra text.
+        RULES:
+        - Be ultra-relevant. If it's a question, use tags like "Question" or the subject.
+        - If the user already used these hashtags: [${userHashtags.join(', ')}], DO NOT REPEAT THEM.
+        - Return ONLY a comma-separated list of NEW tags.
+        - No hashtags, no explanations, no filler.
+        
+        LOGIC EXAMPLE:
+        Content: "Anyone have notes for CS101 recursion?" 
+        Logical Tags: Computer Science, Study Materials, Recursion
         
         Content: ${content}`;
 
@@ -86,10 +94,14 @@ export class PostsService {
             .slice(0, 5);
 
           tags = [...aiTags];
+          aiStatus = 'success';
         }
       } catch (error) {
         this.logger.error('Failed to generate tags with Gemini', error);
+        aiStatus = 'failed';
       }
+    } else {
+      aiStatus = 'failed';
     }
 
     // 3. Merge All (User Hashtags + AI Tags) - Ensure user hashtags are ALWAYS included
@@ -119,6 +131,7 @@ export class PostsService {
       tags,
       imageUrl,
       authorId,
+      aiStatus,
     });
 
     if (authorId) {
