@@ -14,6 +14,9 @@ export class Post {
   @Prop({ type: String, required: false })
   imageUrl?: string;
 
+  @Prop({ type: String, required: false }) // Making optional for backward compatibility
+  authorId?: string;
+
   @Prop({ type: [String], default: [] })
   likes: string[]; // User IDs
 
