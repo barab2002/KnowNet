@@ -130,8 +130,30 @@ export class PostsService {
     const index = post.likes.indexOf(userId);
     if (index === -1) {
       post.likes.push(userId);
+      // Increment author's likesReceived
+      if (post.authorId) {
+        await this.usersService
+          .incrementLikesReceived(post.authorId)
+          .catch((err) =>
+            this.logger.error(
+              `Failed to increment likesReceived for user ${post.authorId}`,
+              err,
+            ),
+          );
+      }
     } else {
       post.likes.splice(index, 1);
+      // Decrement author's likesReceived
+      if (post.authorId) {
+        await this.usersService
+          .decrementLikesReceived(post.authorId)
+          .catch((err) =>
+            this.logger.error(
+              `Failed to decrement likesReceived for user ${post.authorId}`,
+              err,
+            ),
+          );
+      }
     }
     return post.save();
   }

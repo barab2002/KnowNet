@@ -213,29 +213,44 @@ export const UserProfilePage = () => {
             </div>
           </div>
           {/* Profile Stats */}
-          <div className="flex flex-wrap gap-4 mt-8 border-t border-slate-100 dark:border-[#324d67] pt-6">
-            <div className="flex flex-1 min-w-[120px] flex-col gap-1 rounded-xl bg-slate-50 dark:bg-transparent border border-slate-200 dark:border-[#324d67] p-4">
-              <p className="text-2xl font-bold leading-tight">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-8 border-t border-slate-100 dark:border-[#324d67] pt-6">
+            <div className="flex flex-col gap-1 rounded-2xl bg-slate-50 dark:bg-[#192633] border border-slate-200 dark:border-[#324d67] p-5 transition-all hover:border-primary/30 group">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="material-symbols-outlined text-sm text-blue-500 font-bold">
+                  article
+                </span>
+                <p className="text-slate-500 dark:text-[#92adc9] text-[10px] font-extrabold uppercase tracking-widest">
+                  Total Posts
+                </p>
+              </div>
+              <p className="text-3xl font-black leading-tight text-slate-900 dark:text-white">
                 {user?.postsCount || 0}
               </p>
-              <p className="text-slate-500 dark:text-[#92adc9] text-xs font-medium uppercase tracking-wider">
-                Posts
-              </p>
             </div>
-            <div className="flex flex-1 min-w-[120px] flex-col gap-1 rounded-xl bg-slate-50 dark:bg-transparent border border-slate-200 dark:border-[#324d67] p-4">
-              <p className="text-2xl font-bold leading-tight">
+            <div className="flex flex-col gap-1 rounded-2xl bg-slate-50 dark:bg-[#192633] border border-slate-200 dark:border-[#324d67] p-5 transition-all hover:border-pink-500/30 group ring-2 ring-pink-500/5">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="material-symbols-outlined text-sm text-pink-500 font-bold">
+                  favorite
+                </span>
+                <p className="text-slate-500 dark:text-[#92adc9] text-[10px] font-extrabold uppercase tracking-widest">
+                  Total Likes
+                </p>
+              </div>
+              <p className="text-3xl font-black leading-tight text-slate-900 dark:text-white">
                 {user?.likesReceived || 0}
               </p>
-              <p className="text-slate-500 dark:text-[#92adc9] text-xs font-medium uppercase tracking-wider">
-                Likes
-              </p>
             </div>
-            <div className="flex flex-1 min-w-[120px] flex-col gap-1 rounded-xl bg-slate-50 dark:bg-transparent border border-slate-200 dark:border-[#324d67] p-4">
-              <p className="text-2xl font-bold leading-tight">
+            <div className="flex flex-col gap-1 rounded-2xl bg-slate-50 dark:bg-[#192633] border border-slate-200 dark:border-[#324d67] p-5 transition-all hover:border-amber-500/30 group col-span-2 md:col-span-1">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="material-symbols-outlined text-sm text-amber-500 font-bold">
+                  auto_awesome
+                </span>
+                <p className="text-slate-500 dark:text-[#92adc9] text-[10px] font-extrabold uppercase tracking-widest">
+                  AI Insights
+                </p>
+              </div>
+              <p className="text-3xl font-black leading-tight text-slate-900 dark:text-white">
                 {user?.aiSummariesCount || 0}
-              </p>
-              <p className="text-slate-500 dark:text-[#92adc9] text-xs font-medium uppercase tracking-wider">
-                AI Summaries
               </p>
             </div>
           </div>
