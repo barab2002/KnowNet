@@ -92,7 +92,12 @@ export class PostsController {
       imageUrl = `data:${image.mimetype};base64,${b64}`;
     }
 
-    return this.postsService.createWithImage(createPostDto, imageUrl);
+    return this.postsService.createWithImage(
+      createPostDto,
+      imageUrl,
+      image ? image.buffer : undefined,
+      image ? image.mimetype : undefined,
+    );
   }
 
   @Get()
