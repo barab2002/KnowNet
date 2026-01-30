@@ -35,5 +35,16 @@ services:
       - mongo
     restart: always
 
+  client:
+    build:
+      context: .
+      dockerfile: Dockerfile.client
+    container_name: knownet-client
+    ports:
+      - "80:80"
+    depends_on:
+      - api
+    restart: always
+
 volumes:
   mongo_data:
