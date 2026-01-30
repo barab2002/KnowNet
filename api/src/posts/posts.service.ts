@@ -130,8 +130,30 @@ export class PostsService {
     const index = post.likes.indexOf(userId);
     if (index === -1) {
       post.likes.push(userId);
+      // Increment author's likesReceived
+      if (post.authorId) {
+        await this.usersService
+          .incrementLikesReceived(post.authorId)
+          .catch((err) =>
+            this.logger.error(
+              `Failed to increment likesReceived for user ${post.authorId}`,
+              err,
+            ),
+          );
+      }
     } else {
       post.likes.splice(index, 1);
+      // Decrement author's likesReceived
+      if (post.authorId) {
+        await this.usersService
+          .decrementLikesReceived(post.authorId)
+          .catch((err) =>
+            this.logger.error(
+              `Failed to decrement likesReceived for user ${post.authorId}`,
+              err,
+            ),
+          );
+      }
     }
     return post.save();
   }
@@ -191,5 +213,15 @@ export class PostsService {
   async getUniqueTags(): Promise<string[]> {
     const result = await this.postModel.distinct('tags').exec();
     return result;
+  }
+
+  async getTotalLikesForUser(userId: string): Promise<number> {
+    const result = await this.postModel.aggregate([
+      { $match: { authorId: userId } },
+      { $project: { likesCount: { $size: '$likes' } } },
+      { $group: { _id: null, totalLikes: { $sum: '$likesCount' } } },
+    ]);
+
+    return result.length > 0 ? result[0].totalLikes : 0;
   }
 }
