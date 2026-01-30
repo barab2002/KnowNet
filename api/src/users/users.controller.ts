@@ -24,6 +24,11 @@ export class UsersController {
     return this.usersService.findById(userId);
   }
 
+  @Post()
+  async createUser(@Body() body: { _id: string; email: string; name: string }) {
+    return this.usersService.findOrCreate(body._id, body);
+  }
+
   @Put(':userId')
   async updateProfile(
     @Param('userId') userId: string,

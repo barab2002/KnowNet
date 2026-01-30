@@ -9,6 +9,7 @@ import {
   Post,
 } from '../../api/posts';
 import { getUserProfile, uploadProfileImage, User } from '../../api/users';
+import { useAuth } from '../../contexts/AuthContext';
 
 export const UserProfilePage = () => {
   const [isCreatePostModalOpen, setIsCreatePostModalOpen] = useState(false);
@@ -22,32 +23,57 @@ export const UserProfilePage = () => {
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // For now, we'll use a hardcoded user ID. In production, this would come from auth context
-  const currentUserId = 'current-user-id';
+  const { user: authUser, updateUser } = useAuth();
+
+  // Use the ID from the logged-in user
+  const currentUserId = authUser?._id || '';
 
   const fetchUserProfile = async () => {
+    if (!currentUserId) return;
+
     setIsLoadingUser(true);
     try {
       const userData = await getUserProfile(currentUserId);
       setUser(userData);
     } catch (error) {
-      console.error('Failed to fetch user profile:', error);
+      console.error(
+        'Failed to fetch user profile, using auth fallback:',
+        error,
+      );
+      // Fallback to auth context data if backend profile missing
+      if (authUser) {
+        setUser({
+          _id: authUser._id,
+          name: authUser.name,
+          email: authUser.email,
+          profileImageUrl: authUser.profileImageUrl,
+          joinedDate: new Date().toISOString(),
+          postsCount: 0,
+          likesReceived: 0,
+          aiSummariesCount: 0,
+          bio: authUser.bio || 'Welcome to KnowNet!',
+          major: authUser.major,
+          graduationYear: authUser.graduationYear,
+        });
+      }
     } finally {
       setIsLoadingUser(false);
     }
   };
 
   const fetchPosts = async () => {
+    if (!currentUserId) return;
+
     let promise;
     switch (activeTab) {
       case 'posts':
-        promise = getMyPosts();
+        promise = getMyPosts(currentUserId);
         break;
       case 'liked':
-        promise = getLikedPosts();
+        promise = getLikedPosts(currentUserId);
         break;
       case 'saved':
-        promise = getSavedPosts();
+        promise = getSavedPosts(currentUserId);
         break;
     }
     promise?.then(setPosts).catch(console.error);
@@ -55,11 +81,11 @@ export const UserProfilePage = () => {
 
   useEffect(() => {
     fetchUserProfile();
-  }, []);
+  }, [currentUserId]);
 
   useEffect(() => {
     fetchPosts();
-  }, [activeTab]);
+  }, [activeTab, currentUserId]);
 
   const handleProfileImageClick = () => {
     fileInputRef.current?.click();

@@ -4,13 +4,17 @@ import { Model } from 'mongoose';
 import { Post, PostDocument } from './schemas/post.schema';
 import { CreatePostDto } from './dto/create-post.dto';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { UsersService } from '../users/users.service';
 
 @Injectable()
 export class PostsService {
   private readonly logger = new Logger(PostsService.name);
   private genAI: GoogleGenerativeAI;
 
-  constructor(@InjectModel(Post.name) private postModel: Model<PostDocument>) {
+  constructor(
+    @InjectModel(Post.name) private postModel: Model<PostDocument>,
+    private readonly usersService: UsersService,
+  ) {
     // Initialize Gemini only if API key is available
     if (process.env.GEMINI_API_KEY) {
       this.genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
@@ -18,7 +22,7 @@ export class PostsService {
   }
 
   async create(createPostDto: CreatePostDto): Promise<Post> {
-    const { content } = createPostDto;
+    const { content, authorId } = createPostDto;
     let tags: string[] = [];
 
     // AI Tag Generation Logic
@@ -47,7 +51,20 @@ export class PostsService {
     const createdPost = new this.postModel({
       content,
       tags,
+      authorId,
     });
+
+    if (authorId) {
+      await this.usersService
+        .incrementPostsCount(authorId)
+        .catch((err) =>
+          this.logger.error(
+            `Failed to increment post count for user ${authorId}`,
+            err,
+          ),
+        );
+    }
+
     return createdPost.save();
   }
 
@@ -59,7 +76,7 @@ export class PostsService {
     createPostDto: CreatePostDto,
     imageUrl?: string,
   ): Promise<Post> {
-    const { content } = createPostDto;
+    const { content, authorId } = createPostDto;
     let tags: string[] = [];
 
     // AI Tag Generation Logic
@@ -89,7 +106,20 @@ export class PostsService {
       content,
       tags,
       imageUrl,
+      authorId,
     });
+
+    if (authorId) {
+      await this.usersService
+        .incrementPostsCount(authorId)
+        .catch((err) =>
+          this.logger.error(
+            `Failed to increment post count for user ${authorId}`,
+            err,
+          ),
+        );
+    }
+
     return createdPost.save();
   }
 
@@ -136,7 +166,12 @@ export class PostsService {
   }
 
   async getPostsByUser(userId: string): Promise<Post[]> {
-    return this.postModel.find({}).sort({ createdAt: -1 }).exec(); // Simplified for now since we don't have authorId on post yet, logic update needed if we want strict ownership
+    // If mocking is still needed for old posts without authorId, keep find({}) or migrate data
+    // For now, let's filter by authorId to satisfy the user request "see it in my profile"
+    return this.postModel
+      .find({ authorId: userId })
+      .sort({ createdAt: -1 })
+      .exec();
   }
 
   async getLikedPosts(userId: string): Promise<Post[]> {
