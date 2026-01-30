@@ -224,4 +224,49 @@ export class PostsService {
 
     return result.length > 0 ? result[0].totalLikes : 0;
   }
+
+  async delete(postId: string, userId: string): Promise<void> {
+    const post = await this.postModel.findById(postId);
+    if (!post) {
+      throw new Error('Post not found');
+    }
+
+    if (post.authorId !== userId) {
+      throw new Error('Unauthorized to delete this post');
+    }
+
+    const likesCount = post.likes.length;
+
+    await this.postModel.findByIdAndDelete(postId);
+
+    if (userId) {
+      await this.usersService
+        .decrementPostsCount(userId)
+        .catch((err) =>
+          this.logger.error(
+            `Failed to decrement posts count for user ${userId}`,
+            err,
+          ),
+        );
+
+      if (likesCount > 0) {
+        // We need a way to decrement multiple likes at once or loop.
+        // Let's see if UsersService has a bulk update.
+        // For now, I'll just adjust the likes count if I can.
+        // Actually, UsersService only has decrementLikesReceived which decrements by 1.
+        // I'll call it in a loop or add a bulk method.
+        // Simpler: iterate.
+        for (let i = 0; i < likesCount; i++) {
+          await this.usersService
+            .decrementLikesReceived(userId)
+            .catch((err) =>
+              this.logger.error(
+                `Failed to decrement likes count for user ${userId}`,
+                err,
+              ),
+            );
+        }
+      }
+    }
+  }
 }

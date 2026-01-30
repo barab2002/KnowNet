@@ -1,5 +1,11 @@
 import React, { useState } from 'react';
-import { Post, toggleLike, toggleSave, addComment } from '../api/posts';
+import {
+  Post,
+  toggleLike,
+  toggleSave,
+  addComment,
+  deletePost,
+} from '../api/posts';
 import { useAuth } from '../contexts/AuthContext';
 
 interface PostCardProps {
@@ -49,6 +55,17 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onUpdate }) => {
     }
   };
 
+  const handleDelete = async () => {
+    if (!window.confirm('Are you sure you want to delete this post?')) return;
+    try {
+      await deletePost(post._id, currentUserId);
+      if (onUpdate) onUpdate();
+    } catch (err) {
+      console.error('Failed to delete post', err);
+      alert('Failed to delete post');
+    }
+  };
+
   return (
     <article className="bg-white dark:bg-card-dark rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden hover:border-primary/50 transition-colors">
       <div className="p-5">
@@ -78,9 +95,23 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onUpdate }) => {
               </p>
             </div>
           </div>
-          <button className="text-slate-400 hover:text-primary">
-            <span className="material-icons-round">more_horiz</span>
-          </button>
+
+          <div className="flex items-center gap-2">
+            {post.authorId === currentUserId && (
+              <button
+                onClick={handleDelete}
+                className="text-slate-400 hover:text-red-500 transition-colors p-1"
+                title="Delete Post"
+              >
+                <span className="material-icons-round text-xl">
+                  delete_outline
+                </span>
+              </button>
+            )}
+            <button className="text-slate-400 hover:text-primary p-1">
+              <span className="material-icons-round">more_horiz</span>
+            </button>
+          </div>
         </div>
 
         {/* AI Tags */}
