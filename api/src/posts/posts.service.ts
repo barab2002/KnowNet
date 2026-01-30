@@ -22,50 +22,7 @@ export class PostsService {
   }
 
   async create(createPostDto: CreatePostDto): Promise<Post> {
-    const { content, authorId } = createPostDto;
-    let tags: string[] = [];
-
-    // AI Tag Generation Logic
-    if (this.genAI) {
-      try {
-        const model = this.genAI.getGenerativeModel({
-          model: 'gemini-1.5-flash',
-        });
-        const prompt = `You are a helpful assistant that extracts tags from text. Return only the tags as a comma-separated list, e.g. 'tech, ai, coding'. Do not include any other text. Extract tags from this content: ${content}`;
-
-        const result = await model.generateContent(prompt);
-        const generatedText = result.response.text();
-
-        if (generatedText) {
-          tags = generatedText.split(',').map((tag) => tag.trim());
-        }
-      } catch (error) {
-        this.logger.error('Failed to generate tags with Gemini', error);
-      }
-    } else {
-      // Mock fallback if no API key
-      this.logger.warn('GEMINI_API_KEY not found, using mock tags');
-      tags = ['mock-tag', 'knownet'];
-    }
-
-    const createdPost = new this.postModel({
-      content,
-      tags,
-      authorId,
-    });
-
-    if (authorId) {
-      await this.usersService
-        .incrementPostsCount(authorId)
-        .catch((err) =>
-          this.logger.error(
-            `Failed to increment post count for user ${authorId}`,
-            err,
-          ),
-        );
-    }
-
-    return createdPost.save();
+    return this.createWithImage(createPostDto);
   }
 
   async findAll(): Promise<Post[]> {
@@ -75,6 +32,8 @@ export class PostsService {
   async createWithImage(
     createPostDto: CreatePostDto,
     imageUrl?: string,
+    imageBuffer?: Buffer,
+    mimetype?: string,
   ): Promise<Post> {
     const { content, authorId } = createPostDto;
     let tags: string[] = [];
@@ -85,21 +44,61 @@ export class PostsService {
         const model = this.genAI.getGenerativeModel({
           model: 'gemini-1.5-flash',
         });
-        const prompt = `You are a helpful assistant that extracts tags from text. Return only the tags as a comma-separated list, e.g. 'tech, ai, coding'. Do not include any other text. Extract tags from this content: ${content}`;
 
-        const result = await model.generateContent(prompt);
+        const prompt = `You are an expert at categorizing content for a campus social network called KnowNet. 
+        Extract 2-4 highly relevant tags from the following content. 
+        Focus on academic subjects, campus life, or specific topics mentioned.
+        Return ONLY a comma-separated list of tags (e.g., "Physics, Study Tips, Campus Events").
+        Do not include hashtags or extra text.
+        Content: ${content}`;
+
+        let result;
+        if (imageBuffer && mimetype) {
+          result = await model.generateContent([
+            prompt,
+            {
+              inlineData: {
+                data: imageBuffer.toString('base64'),
+                mimeType: mimetype,
+              },
+            },
+          ]);
+        } else {
+          result = await model.generateContent(prompt);
+        }
+
         const generatedText = result.response.text();
-
         if (generatedText) {
-          tags = generatedText.split(',').map((tag) => tag.trim());
+          tags = generatedText
+            .split(',')
+            .map((tag) => tag.trim())
+            .filter((tag) => tag.length > 0)
+            .slice(0, 5);
         }
       } catch (error) {
         this.logger.error('Failed to generate tags with Gemini', error);
       }
-    } else {
-      // Mock fallback if no API key
-      this.logger.warn('GEMINI_API_KEY not found, using mock tags');
-      tags = ['mock-tag', 'knownet'];
+    }
+
+    // Fallback: If no AI tags generated, use simple keyword extraction (The "Free AI")
+    if (tags.length === 0) {
+      this.logger.warn('Using fallback keyword extraction for tags');
+      const keywords = content
+        .toLowerCase()
+        .replace(/[^\w\s]/g, '')
+        .split(/\s+/)
+        .filter((word) => word.length > 4) // Only words longer than 4 chars
+        .filter(
+          (word) =>
+            !['about', 'there', 'their', 'would', 'could', 'should'].includes(
+              word,
+            ),
+        );
+
+      // Get unique keywords, take top 3
+      tags = [...new Set(keywords)].slice(0, 3);
+
+      if (tags.length === 0) tags = ['General', 'Community'];
     }
 
     const createdPost = new this.postModel({
