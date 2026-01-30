@@ -4,6 +4,7 @@ import {
   Post,
   Body,
   Param,
+  Delete,
   UseInterceptors,
   UploadedFile,
 } from '@nestjs/common';
@@ -99,5 +100,11 @@ export class PostsController {
   @ApiResponse({ status: 200, description: 'Return all posts.' })
   findAll() {
     return this.postsService.findAll();
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Delete a post' })
+  async delete(@Param('id') id: string, @Body('userId') userId: string) {
+    return this.postsService.delete(id, userId);
   }
 }

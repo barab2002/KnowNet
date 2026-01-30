@@ -110,3 +110,10 @@ export const getTotalLikesForUser = async (userId: string): Promise<number> => {
   );
   return response.data.totalLikes;
 };
+
+export const deletePost = async (
+  postId: string,
+  userId: string,
+): Promise<void> => {
+  await axios.delete(`${API_URL}/${postId}`, { data: { userId } });
+};
