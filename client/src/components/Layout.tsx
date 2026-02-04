@@ -25,28 +25,17 @@ export const Layout = () => {
             </div>
             <span className="text-xl font-bold tracking-tight">KnowNet</span>
           </div>
-          <div className="flex-1 max-w-2xl relative group hidden sm:block">
-            <span className="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors">
-              search
-            </span>
-            <input
-              className="w-full bg-slate-100 dark:bg-card-dark border-none rounded-xl py-2.5 pl-11 pr-4 focus:ring-2 focus:ring-primary text-sm transition-all outline-none"
-              placeholder="Semantic search: 'physics study groups' or 'best coffee near library'..."
-              type="text"
-            />
-          </div>
           <div className="flex items-center gap-4">
-            <button className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full relative">
-              <span className="material-icons-round">notifications</span>
-              <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-background-dark"></span>
-            </button>
-            <div className="w-10 h-10 rounded-full border-2 border-primary overflow-hidden">
+            <NavLink
+              to="/user-profile"
+              className="w-10 h-10 rounded-full border-2 border-primary overflow-hidden hover:ring-2 hover:ring-primary/50 transition-all cursor-pointer"
+            >
               <img
                 alt="Profile"
                 className="w-full h-full object-cover"
                 src={user?.profileImageUrl || defaultAvatar}
               />
-            </div>
+            </NavLink>
           </div>
         </div>
       </header>
