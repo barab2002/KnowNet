@@ -12,10 +12,18 @@ export class UsersService {
     userId: string,
     initialData?: Partial<User>,
   ): Promise<User> {
+    // If googleId provided in initialData, try to find by that first
+    if (initialData?.googleId) {
+      const existingUser = await this.userModel.findOne({
+        googleId: initialData.googleId,
+      });
+      if (existingUser) return existingUser;
+    }
+
     let user = await this.userModel.findById(userId);
     if (!user) {
       user = new this.userModel({
-        _id: userId,
+        _id: userId, // Use userId as _id (from Google ID or whatever passed)
         email: initialData?.email || `user-${userId}@knownet.com`,
         name: initialData?.name || 'Anonymous User',
         ...initialData,
