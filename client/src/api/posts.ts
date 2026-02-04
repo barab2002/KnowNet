@@ -7,6 +7,7 @@ export interface Post {
   createdAt: string;
   updatedAt: string;
   imageUrl?: string;
+  summary?: string;
   authorId?: string; // ID of the user who created the post
   likes: string[];
   savedBy: string[];
@@ -109,4 +110,16 @@ export const getTotalLikesForUser = async (userId: string): Promise<number> => {
     `${API_URL}/user/${userId}/total-likes`,
   );
   return response.data.totalLikes;
+};
+
+export const searchPosts = async (query: string): Promise<Post[]> => {
+  const response = await axios.get<Post[]>(`${API_URL}/search`, {
+    params: { q: query },
+  });
+  return response.data;
+};
+
+export const summarizePost = async (postId: string): Promise<Post> => {
+  const response = await axios.post<Post>(`${API_URL}/${postId}/summarize`);
+  return response.data;
 };
