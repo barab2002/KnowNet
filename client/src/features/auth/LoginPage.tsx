@@ -141,6 +141,22 @@ export const LoginPage = () => {
             </button>
           </form>
 
+          <div className="mt-6">
+            <a
+              href="/api/auth/google"
+              className="flex items-center justify-center w-full py-3 px-6 rounded-lg border border-slate-300 dark:border-[#324d67] bg-white dark:bg-[#0d1419] hover:bg-slate-50 dark:hover:bg-[#192633] transition-colors gap-3 group"
+            >
+              <img
+                src="https://www.google.com/favicon.ico"
+                alt="Google"
+                className="w-5 h-5 opacity-70 group-hover:opacity-100 transition-opacity"
+              />
+              <span className="font-bold text-sm text-slate-700 dark:text-slate-200">
+                Sign in with Google
+              </span>
+            </a>
+          </div>
+
           {/* Divider */}
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">

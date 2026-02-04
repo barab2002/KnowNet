@@ -85,3 +85,12 @@ export const logout = async (): Promise<void> => {
   // Clear any server-side sessions if needed
   return Promise.resolve();
 };
+
+export const getProfile = async (
+  token: string,
+): Promise<AuthResponse['user']> => {
+  const response = await axios.get<AuthResponse['user']>(`${API_URL}/profile`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return response.data;
+};
