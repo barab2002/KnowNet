@@ -21,7 +21,11 @@ export class PostsService {
   }
 
   async findAll(): Promise<Post[]> {
-    return this.postModel.find().sort({ createdAt: -1 }).exec();
+    return this.postModel
+      .find()
+      .populate('authorId', 'name profileImageUrl')
+      .sort({ createdAt: -1 })
+      .exec();
   }
 
   async createWithImage(
