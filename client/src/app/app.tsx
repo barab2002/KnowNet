@@ -6,6 +6,7 @@ import StudentDashboardPage from '../features/student-dashboard/StudentDashboard
 import UserProfilePage from '../features/user-profile/UserProfilePage';
 import SettingsPage from '../features/settings/SettingsPage';
 import LoginPage from '../features/auth/LoginPage';
+import LoginSuccessPage from '../features/auth/LoginSuccessPage';
 import RegisterPage from '../features/auth/RegisterPage';
 import { Layout } from '../components/Layout';
 import { AuthProvider } from '../contexts/AuthContext';
@@ -18,6 +19,7 @@ export function App() {
         <Routes>
           {/* Public Routes */}
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/login/success" element={<LoginSuccessPage />} />
           <Route path="/register" element={<RegisterPage />} />
 
           {/* Protected Routes */}

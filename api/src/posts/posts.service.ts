@@ -17,24 +17,7 @@ export class PostsService {
   ) {}
 
   async create(createPostDto: CreatePostDto): Promise<Post> {
-    const { content, authorId } = createPostDto;
-
-    // Generate summary using AiService (tags are no longer AI-generated)
-    const summary = await this.aiService.generateSummary(content);
-    const tags: string[] = []; // Default empty tags
-
-    const createdPost = new this.postModel({
-      content,
-      tags,
-      summary,
-      authorId,
-    });
-
-    if (authorId) {
-      this.incrementPostCount(authorId);
-    }
-
-    return createdPost.save();
+    return this.createWithImage(createPostDto);
   }
 
   async findAll(): Promise<Post[]> {
@@ -44,12 +27,46 @@ export class PostsService {
   async createWithImage(
     createPostDto: CreatePostDto,
     imageUrl?: string,
+    imageBuffer?: Buffer,
+    mimetype?: string,
   ): Promise<Post> {
     const { content, authorId } = createPostDto;
 
     // Generate summary using AiService (tags are no longer AI-generated)
     const summary = await this.aiService.generateSummary(content);
-    const tags: string[] = []; // Default empty tags
+
+    // Fallback/Simple tag extraction (replacing the AI one as requested by user)
+    // We can keep the simple hashtag extraction and keyword extraction if we want, or just empty.
+    // Given the previous instructions to remove AI tags, I'll stick to simple extraction or empty.
+    // I'll use the simple extraction logic from 'main' just in case, but no Gemini for tags.
+
+    let tags: string[] = [];
+
+    // Manual Hashtag Extraction (User-defined tags)
+    const hashtags = content.match(/#(\w+)/g);
+    if (hashtags) {
+      const extractedTags = hashtags.map((tag) => tag.substring(1)); // Remove '#'
+      tags = [...new Set([...tags, ...extractedTags])];
+    }
+
+    // Fallback: simple keyword extraction
+    if (tags.length === 0) {
+      const keywords = content
+        .toLowerCase()
+        .replace(/[^\w\s]/g, '')
+        .split(/\s+/)
+        .filter((word) => word.length > 4) // Only words longer than 4 chars
+        .filter(
+          (word) =>
+            !['about', 'there', 'their', 'would', 'could', 'should'].includes(
+              word,
+            ),
+        );
+
+      // Get unique keywords, take top 3
+      tags = [...new Set(keywords)].slice(0, 3);
+      if (tags.length === 0) tags = ['General', 'Community'];
+    }
 
     const createdPost = new this.postModel({
       content,
@@ -164,6 +181,45 @@ export class PostsService {
     const summary = await this.aiService.generateSummary(post.content);
     post.summary = summary;
     return post.save();
+  }
+
+  async delete(postId: string, userId: string): Promise<void> {
+    const post = await this.postModel.findById(postId);
+    if (!post) {
+      throw new Error('Post not found');
+    }
+
+    if (post.authorId !== userId) {
+      throw new Error('Unauthorized to delete this post');
+    }
+
+    const likesCount = post.likes.length;
+
+    await this.postModel.findByIdAndDelete(postId);
+
+    if (userId) {
+      await this.usersService
+        .decrementPostsCount(userId)
+        .catch((err) =>
+          this.logger.error(
+            `Failed to decrement posts count for user ${userId}`,
+            err,
+          ),
+        );
+
+      if (likesCount > 0) {
+        for (let i = 0; i < likesCount; i++) {
+          await this.usersService
+            .decrementLikesReceived(userId)
+            .catch((err) =>
+              this.logger.error(
+                `Failed to decrement likes count for user ${userId}`,
+                err,
+              ),
+            );
+        }
+      }
+    }
   }
 
   private async incrementPostCount(authorId: string) {

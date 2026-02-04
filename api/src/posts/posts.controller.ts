@@ -4,6 +4,7 @@ import {
   Post,
   Body,
   Param,
+  Delete,
   UseInterceptors,
   UploadedFile,
   Query,
@@ -107,7 +108,12 @@ export class PostsController {
       imageUrl = `data:${image.mimetype};base64,${b64}`;
     }
 
-    return this.postsService.createWithImage(createPostDto, imageUrl);
+    return this.postsService.createWithImage(
+      createPostDto,
+      imageUrl,
+      image ? image.buffer : undefined,
+      image ? image.mimetype : undefined,
+    );
   }
 
   @Get()
@@ -115,5 +121,11 @@ export class PostsController {
   @ApiResponse({ status: 200, description: 'Return all posts.' })
   findAll() {
     return this.postsService.findAll();
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Delete a post' })
+  async delete(@Param('id') id: string, @Body('userId') userId: string) {
+    return this.postsService.delete(id, userId);
   }
 }
