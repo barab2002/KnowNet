@@ -5,6 +5,7 @@ import React, {
   useEffect,
   ReactNode,
 } from 'react';
+import axios from 'axios';
 import {
   login as apiLogin,
   register as apiRegister,
@@ -83,6 +84,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
 
     loadAuthState();
   }, []);
+
+  // Update Axios default header when token changes
+  useEffect(() => {
+    if (token) {
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    } else {
+      delete axios.defaults.headers.common['Authorization'];
+    }
+  }, [token]);
 
   const saveAuthState = (authData: AuthResponse, rememberMe: boolean) => {
     const storage: AuthStorage = {

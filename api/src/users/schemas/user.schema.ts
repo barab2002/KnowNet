@@ -14,6 +14,12 @@ export class User {
   @Prop()
   googleId?: string;
 
+  @Prop()
+  googleAccessToken?: string;
+
+  @Prop()
+  googleRefreshToken?: string;
+
   @Prop({ required: true })
   name: string;
 

@@ -174,11 +174,21 @@ export class PostsService {
       .exec();
   }
 
-  async summarizePost(postId: string): Promise<Post> {
+  async summarizePost(postId: string, userId?: string): Promise<Post> {
     const post = await this.postModel.findById(postId);
     if (!post) throw new Error('Post not found');
 
-    const summary = await this.aiService.generateSummary(post.content);
+    let accessToken: string | undefined;
+    if (userId) {
+      const user = await this.usersService.findById(userId);
+      accessToken = user.googleAccessToken;
+      await this.usersService.incrementAiSummaries(userId);
+    }
+
+    const summary = await this.aiService.generateSummary(
+      post.content,
+      accessToken,
+    );
     post.summary = summary;
     return post.save();
   }
