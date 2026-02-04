@@ -10,6 +10,8 @@ export interface Post {
   summary?: string;
   authorId?: string | { _id: string; name: string; profileImageUrl?: string }; // ID or Populated User Object
   likes: string[];
+  userTags?: string[];
+  aiTags?: string[];
   savedBy: string[];
   comments: {
     userId: string;

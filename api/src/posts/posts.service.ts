@@ -36,45 +36,42 @@ export class PostsService {
   ): Promise<Post> {
     const { content, authorId } = createPostDto;
 
-    // Generate summary using AiService (tags are no longer AI-generated)
+    // Generate summary using AiService
     const summary = await this.aiService.generateSummary(content);
 
-    // Fallback/Simple tag extraction (replacing the AI one as requested by user)
-    // We can keep the simple hashtag extraction and keyword extraction if we want, or just empty.
-    // Given the previous instructions to remove AI tags, I'll stick to simple extraction or empty.
-    // I'll use the simple extraction logic from 'main' just in case, but no Gemini for tags.
-
-    let tags: string[] = [];
-
-    // Manual Hashtag Extraction (User-defined tags)
+    // User-defined hashtags
+    let userTags: string[] = [];
     const hashtags = content.match(/#(\w+)/g);
     if (hashtags) {
-      const extractedTags = hashtags.map((tag) => tag.substring(1)); // Remove '#'
-      tags = [...new Set([...tags, ...extractedTags])];
+      userTags = [...new Set(hashtags.map((tag) => tag.substring(1)))];
     }
 
-    // Fallback: simple keyword extraction
-    if (tags.length === 0) {
+    // AI/Fallback keywords (only if no user tags)
+    let aiTags: string[] = [];
+    if (userTags.length === 0) {
       const keywords = content
         .toLowerCase()
         .replace(/[^\w\s]/g, '')
         .split(/\s+/)
-        .filter((word) => word.length > 4) // Only words longer than 4 chars
+        .filter((word) => word.length > 4)
         .filter(
           (word) =>
             !['about', 'there', 'their', 'would', 'could', 'should'].includes(
               word,
             ),
         );
-
-      // Get unique keywords, take top 3
-      tags = [...new Set(keywords)].slice(0, 3);
-      if (tags.length === 0) tags = ['General', 'Community'];
+      aiTags = [...new Set(keywords)].slice(0, 3);
+      if (aiTags.length === 0) aiTags = ['General', 'Community'];
     }
+
+    // Combined tags for backward compatibility / text search
+    const tags = [...userTags, ...aiTags];
 
     const createdPost = new this.postModel({
       content,
       tags,
+      userTags,
+      aiTags,
       summary,
       imageUrl,
       authorId,
