@@ -8,10 +8,13 @@ import {
   UseInterceptors,
   UploadedFile,
   Query,
+  Req,
+  UseGuards,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Express } from 'express';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { AuthGuard } from '@nestjs/passport';
 import { PostsService } from './posts.service';
 import { CreatePostDto } from './dto/create-post.dto';
 
@@ -38,7 +41,12 @@ export class PostsController {
   @Post(':id/summarize')
   @ApiOperation({ summary: 'Generate AI summary for post' })
   async summarize(@Param('id') id: string) {
-    return this.postsService.summarizePost(id);
+    try {
+      return await this.postsService.summarizePost(id);
+    } catch (error) {
+      // Re-throw with proper HTTP status
+      throw error;
+    }
   }
 
   @Post(':id/like')

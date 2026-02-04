@@ -18,7 +18,23 @@ export class AiService {
     }
   }
 
-  async generateSummary(content: string): Promise<string> {
+  async generateSummary(
+    content: string,
+    accessToken?: string,
+  ): Promise<string> {
+    // 1. If Access Token is provided, try to use it with REST API (User Quota)
+    // 1. Log the context (User Quota not used to avoid scope verification issues)
+    if (accessToken) {
+      this.logger.log(
+        `[AiService] Generating summary on behalf of authenticated user (Token available)`,
+      );
+    } else {
+      this.logger.log(
+        `[AiService] Generating summary for anonymous/system request`,
+      );
+    }
+
+    // 2. Fallback to Server API Key
     if (!this.genAI) {
       this.logger.warn('Generate Summary called but no API Key is available.');
       return 'Mock summary: This is a placeholder summary because no API key was provided.';
@@ -26,25 +42,29 @@ export class AiService {
 
     try {
       this.logger.log(
-        `Generating summary for content length: ${content.length}`,
+        `Generating summary for content length: ${content.length} (Server Key)`,
       );
       const model = this.genAI.getGenerativeModel({
-        model: 'gemini-1.5-flash',
+        model: 'gemini-2.5-flash',
       });
       const prompt = `You are a helpful assistant. Please provide a concise, one-sentence summary of the following content: ${content}`;
 
       const result = await model.generateContent(prompt);
       const generatedText = result.response.text();
-      this.logger.log('Summary generated successfully');
 
-      return generatedText || '';
+      if (!generatedText) {
+        throw new Error('Gemini returned an empty response');
+      }
+
+      this.logger.log('Summary generated successfully');
+      return generatedText;
     } catch (error) {
       this.logger.error('Failed to generate summary with Gemini', error);
       if (error instanceof Error) {
         this.logger.error(`Error details: ${error.message}`);
-        this.logger.error(error.stack);
+        throw new Error(`AI Error: ${error.message}`);
       }
-      return '';
+      throw new Error('AI Error: Unknown failure');
     }
   }
 }

@@ -22,6 +22,8 @@ export class AuthService {
       email: googleUser.email,
       name: `${googleUser.firstName} ${googleUser.lastName}`,
       profileImageUrl: googleUser.picture,
+      googleAccessToken: googleUser.accessToken,
+      googleRefreshToken: googleUser.refreshToken,
     });
 
     return user;

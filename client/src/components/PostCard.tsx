@@ -79,9 +79,10 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onUpdate }) => {
       }
 
       if (onUpdate) onUpdate();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to summarize post', err);
-      setError('Failed to generate summary. Please try again later.');
+      const msg = err.response?.data?.message || err.message || 'Unknown error';
+      setError(`Failed: ${msg}`);
     } finally {
       setIsSummarizing(false);
     }
