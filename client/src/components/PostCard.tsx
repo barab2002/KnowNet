@@ -1,5 +1,11 @@
 import React, { useState } from 'react';
-import { Post, toggleLike, toggleSave, addComment } from '../api/posts';
+import {
+  Post,
+  toggleLike,
+  toggleSave,
+  addComment,
+  summarizePost,
+} from '../api/posts';
 import { useAuth } from '../contexts/AuthContext';
 
 interface PostCardProps {
@@ -11,6 +17,16 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onUpdate }) => {
   // We'll use local state for immediate feedback but rely on props for source of truth
   const [commentText, setCommentText] = useState('');
   const [showComments, setShowComments] = useState(false);
+  const [isSummarizing, setIsSummarizing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  // Use local state for optimistic/immediate updates, sync with prop
+  const [localSummary, setLocalSummary] = useState(post.summary);
+
+  // Sync local summary if prop updates (e.g. from parent refresh)
+  React.useEffect(() => {
+    setLocalSummary(post.summary);
+  }, [post.summary]);
+
   const { user } = useAuth();
   const currentUserId = user?._id || '';
 
@@ -49,6 +65,27 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onUpdate }) => {
     }
   };
 
+  const handleSummarize = async () => {
+    try {
+      setIsSummarizing(true);
+      setError(null);
+      const updatedPost = await summarizePost(post._id);
+
+      if (updatedPost && updatedPost.summary) {
+        setLocalSummary(updatedPost.summary);
+      } else {
+        throw new Error('Unable to generate summary. Please try again.');
+      }
+
+      if (onUpdate) onUpdate();
+    } catch (err) {
+      console.error('Failed to summarize post', err);
+      setError('Failed to generate summary. Please try again later.');
+    } finally {
+      setIsSummarizing(false);
+    }
+  };
+
   return (
     <article className="bg-white dark:bg-card-dark rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden hover:border-primary/50 transition-colors">
       <div className="p-5">
@@ -83,20 +120,23 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onUpdate }) => {
           </button>
         </div>
 
-        {/* AI Tags */}
-        <div className="flex flex-wrap gap-2 mb-4">
-          {post.tags.map((tag) => (
-            <span
-              key={tag}
-              className="flex items-center gap-1 px-2.5 py-1 bg-primary/10 text-primary text-[10px] font-bold rounded-lg border border-primary/20"
-            >
-              <span className="material-icons-round text-[12px]">
-                auto_awesome
-              </span>{' '}
-              {tag.toUpperCase()}
-            </span>
-          ))}
-        </div>
+        {/* AI Summary Section */}
+        {error && (
+          <div className="bg-red-50 text-red-500 rounded-lg p-3 border-l-4 border-red-500 mb-4 text-sm animate-in fade-in">
+            {error}
+          </div>
+        )}
+        {localSummary && !error && (
+          <div className="bg-primary/5 rounded-lg p-3 border-l-4 border-primary mb-4 animate-in fade-in">
+            <div className="flex items-center gap-2 text-primary text-xs font-bold mb-1 uppercase tracking-wider">
+              <span className="material-icons-round text-xs">auto_awesome</span>
+              AI Summary
+            </div>
+            <p className="text-sm text-slate-700 dark:text-slate-300 italic">
+              "{localSummary}"
+            </p>
+          </div>
+        )}
 
         <p className="text-slate-800 dark:text-slate-200 text-[15px] leading-relaxed mb-4">
           {post.content}
@@ -131,6 +171,23 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onUpdate }) => {
             </span>
             <span className="text-sm font-medium">{post.comments.length}</span>
           </button>
+
+          <button
+            onClick={handleSummarize}
+            disabled={isSummarizing}
+            className="flex items-center gap-1.5 text-slate-500 hover:text-primary transition-colors disabled:opacity-50"
+            title="Summarize with AI"
+          >
+            <span
+              className={`material-icons-round text-lg ${isSummarizing ? 'animate-spin' : ''}`}
+            >
+              {isSummarizing ? 'sync' : 'summarize'}
+            </span>
+            <span className="text-sm font-medium hidden sm:inline">
+              Summarize
+            </span>
+          </button>
+
           <div className="flex-1"></div>
           <button
             onClick={handleSave}
