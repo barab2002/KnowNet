@@ -129,17 +129,6 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
                 }}
               />
             </label>
-            <div className="w-[1px] h-8 bg-slate-200 dark:bg-slate-700 mx-1"></div>
-            <button
-              type="button"
-              className="p-2 text-primary font-bold text-xs flex items-center gap-1 hover:bg-primary/10 rounded-lg transition-colors"
-              title="AI Assist"
-            >
-              <span className="material-symbols-outlined text-[20px]">
-                auto_awesome
-              </span>
-              <span className="hidden sm:inline">AI Assist</span>
-            </button>
           </div>
 
           <div className="flex gap-2">
