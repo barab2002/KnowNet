@@ -31,6 +31,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (credentials: LoginCredentials) => Promise<void>;
   register: (data: RegisterData) => Promise<void>;
+  loginWithToken: (token: string) => Promise<void>;
   logout: () => void;
   updateUser: (updatedUserData: Partial<User>) => void;
 }
@@ -129,6 +130,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     }
   };
 
+  const loginWithToken = async (token: string) => {
+    try {
+      // Import getProfile dynamically to avoid circular dependencies if any, or just import at top if fine.
+      // Already imported at top? No.
+      const { getProfile } = await import('../api/auth');
+      const user = await getProfile(token);
+
+      const authResponse: AuthResponse = { user, token };
+      saveAuthState(authResponse, true); // Auto remember for Google Auth
+    } catch (error) {
+      console.error('Login with token failed:', error);
+      throw error;
+    }
+  };
+
   const logout = () => {
     apiLogout();
     clearAuthState();
@@ -151,6 +167,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     isLoading,
     login,
     register,
+    loginWithToken,
     logout,
     updateUser,
   };
