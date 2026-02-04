@@ -3,30 +3,29 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Post, PostDocument } from './schemas/post.schema';
 import { CreatePostDto } from './dto/create-post.dto';
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import { UsersService } from '../users/users.service';
+import { AiService } from '../ai/ai.service';
 
 @Injectable()
 export class PostsService {
   private readonly logger = new Logger(PostsService.name);
-  private genAI: GoogleGenerativeAI;
 
   constructor(
     @InjectModel(Post.name) private postModel: Model<PostDocument>,
     private readonly usersService: UsersService,
-  ) {
-    // Initialize Gemini only if API key is available
-    if (process.env.GEMINI_API_KEY) {
-      this.genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    }
-  }
+    private readonly aiService: AiService,
+  ) {}
 
   async create(createPostDto: CreatePostDto): Promise<Post> {
     return this.createWithImage(createPostDto);
   }
 
   async findAll(): Promise<Post[]> {
-    return this.postModel.find().sort({ createdAt: -1 }).exec();
+    return this.postModel
+      .find()
+      .populate('authorId', 'name profileImageUrl')
+      .sort({ createdAt: -1 })
+      .exec();
   }
 
   async createWithImage(
@@ -36,49 +35,16 @@ export class PostsService {
     mimetype?: string,
   ): Promise<Post> {
     const { content, authorId } = createPostDto;
+
+    // Generate summary using AiService (tags are no longer AI-generated)
+    const summary = await this.aiService.generateSummary(content);
+
+    // Fallback/Simple tag extraction (replacing the AI one as requested by user)
+    // We can keep the simple hashtag extraction and keyword extraction if we want, or just empty.
+    // Given the previous instructions to remove AI tags, I'll stick to simple extraction or empty.
+    // I'll use the simple extraction logic from 'main' just in case, but no Gemini for tags.
+
     let tags: string[] = [];
-
-    // AI Tag Generation Logic
-    if (this.genAI) {
-      try {
-        const model = this.genAI.getGenerativeModel({
-          model: 'gemini-1.5-flash',
-        });
-
-        const prompt = `You are an expert at categorizing content for a campus social network called KnowNet. 
-        Extract 2-4 highly relevant tags from the following content. 
-        Focus on academic subjects, campus life, or specific topics mentioned.
-        Return ONLY a comma-separated list of tags (e.g., "Physics, Study Tips, Campus Events").
-        Do not include hashtags or extra text.
-        Content: ${content}`;
-
-        let result;
-        if (imageBuffer && mimetype) {
-          result = await model.generateContent([
-            prompt,
-            {
-              inlineData: {
-                data: imageBuffer.toString('base64'),
-                mimeType: mimetype,
-              },
-            },
-          ]);
-        } else {
-          result = await model.generateContent(prompt);
-        }
-
-        const generatedText = result.response.text();
-        if (generatedText) {
-          tags = generatedText
-            .split(',')
-            .map((tag) => tag.trim())
-            .filter((tag) => tag.length > 0)
-            .slice(0, 5);
-        }
-      } catch (error) {
-        this.logger.error('Failed to generate tags with Gemini', error);
-      }
-    }
 
     // Manual Hashtag Extraction (User-defined tags)
     const hashtags = content.match(/#(\w+)/g);
@@ -87,9 +53,8 @@ export class PostsService {
       tags = [...new Set([...tags, ...extractedTags])];
     }
 
-    // Fallback: If no AI tags and no hashtags, use simple keyword extraction (The "Free AI")
+    // Fallback: simple keyword extraction
     if (tags.length === 0) {
-      this.logger.warn('Using fallback keyword extraction for tags');
       const keywords = content
         .toLowerCase()
         .replace(/[^\w\s]/g, '')
@@ -104,26 +69,19 @@ export class PostsService {
 
       // Get unique keywords, take top 3
       tags = [...new Set(keywords)].slice(0, 3);
-
       if (tags.length === 0) tags = ['General', 'Community'];
     }
 
     const createdPost = new this.postModel({
       content,
       tags,
+      summary,
       imageUrl,
       authorId,
     });
 
     if (authorId) {
-      await this.usersService
-        .incrementPostsCount(authorId)
-        .catch((err) =>
-          this.logger.error(
-            `Failed to increment post count for user ${authorId}`,
-            err,
-          ),
-        );
+      this.incrementPostCount(authorId);
     }
 
     return createdPost.save();
@@ -136,29 +94,13 @@ export class PostsService {
     const index = post.likes.indexOf(userId);
     if (index === -1) {
       post.likes.push(userId);
-      // Increment author's likesReceived
       if (post.authorId) {
-        await this.usersService
-          .incrementLikesReceived(post.authorId)
-          .catch((err) =>
-            this.logger.error(
-              `Failed to increment likesReceived for user ${post.authorId}`,
-              err,
-            ),
-          );
+        this.incrementLikesReceived(post.authorId);
       }
     } else {
       post.likes.splice(index, 1);
-      // Decrement author's likesReceived
       if (post.authorId) {
-        await this.usersService
-          .decrementLikesReceived(post.authorId)
-          .catch((err) =>
-            this.logger.error(
-              `Failed to decrement likesReceived for user ${post.authorId}`,
-              err,
-            ),
-          );
+        this.decrementLikesReceived(post.authorId);
       }
     }
     return post.save();
@@ -194,8 +136,6 @@ export class PostsService {
   }
 
   async getPostsByUser(userId: string): Promise<Post[]> {
-    // If mocking is still needed for old posts without authorId, keep find({}) or migrate data
-    // For now, let's filter by authorId to satisfy the user request "see it in my profile"
     return this.postModel
       .find({ authorId: userId })
       .sort({ createdAt: -1 })
@@ -231,6 +171,32 @@ export class PostsService {
     return result.length > 0 ? result[0].totalLikes : 0;
   }
 
+  async search(query: string): Promise<Post[]> {
+    return this.postModel
+      .find({ $text: { $search: query } }, { score: { $meta: 'textScore' } })
+      .sort({ score: { $meta: 'textScore' } })
+      .exec();
+  }
+
+  async summarizePost(postId: string, userId?: string): Promise<Post> {
+    const post = await this.postModel.findById(postId);
+    if (!post) throw new Error('Post not found');
+
+    let accessToken: string | undefined;
+    if (userId) {
+      const user = await this.usersService.findById(userId);
+      accessToken = user.googleAccessToken;
+      await this.usersService.incrementAiSummaries(userId);
+    }
+
+    const summary = await this.aiService.generateSummary(
+      post.content,
+      accessToken,
+    );
+    post.summary = summary;
+    return post.save();
+  }
+
   async delete(postId: string, userId: string): Promise<void> {
     const post = await this.postModel.findById(postId);
     if (!post) {
@@ -256,12 +222,6 @@ export class PostsService {
         );
 
       if (likesCount > 0) {
-        // We need a way to decrement multiple likes at once or loop.
-        // Let's see if UsersService has a bulk update.
-        // For now, I'll just adjust the likes count if I can.
-        // Actually, UsersService only has decrementLikesReceived which decrements by 1.
-        // I'll call it in a loop or add a bulk method.
-        // Simpler: iterate.
         for (let i = 0; i < likesCount; i++) {
           await this.usersService
             .decrementLikesReceived(userId)
@@ -274,5 +234,38 @@ export class PostsService {
         }
       }
     }
+  }
+
+  private async incrementPostCount(authorId: string) {
+    await this.usersService
+      .incrementPostsCount(authorId)
+      .catch((err) =>
+        this.logger.error(
+          `Failed to increment post count for user ${authorId}`,
+          err,
+        ),
+      );
+  }
+
+  private async incrementLikesReceived(authorId: string) {
+    await this.usersService
+      .incrementLikesReceived(authorId)
+      .catch((err) =>
+        this.logger.error(
+          `Failed to increment likesReceived for user ${authorId}`,
+          err,
+        ),
+      );
+  }
+
+  private async decrementLikesReceived(authorId: string) {
+    await this.usersService
+      .decrementLikesReceived(authorId)
+      .catch((err) =>
+        this.logger.error(
+          `Failed to decrement likesReceived for user ${authorId}`,
+          err,
+        ),
+      );
   }
 }

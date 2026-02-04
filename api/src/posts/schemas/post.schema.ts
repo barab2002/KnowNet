@@ -11,10 +11,13 @@ export class Post {
   @Prop({ type: [String], default: [] })
   tags: string[];
 
+  @Prop({ required: false })
+  summary?: string;
+
   @Prop({ type: String, required: false })
   imageUrl?: string;
 
-  @Prop({ type: String, required: false }) // Making optional for backward compatibility
+  @Prop({ type: String, ref: 'User', required: false }) // Making optional for backward compatibility
   authorId?: string;
 
   @Prop({ type: [String], default: [] })
@@ -41,3 +44,5 @@ export class Post {
 }
 
 export const PostSchema = SchemaFactory.createForClass(Post);
+
+PostSchema.index({ content: 'text', tags: 'text' });

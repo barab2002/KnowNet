@@ -3,6 +3,7 @@
  * This is only a minimal backend to get started.
  */
 
+import 'dotenv/config'; // Ensure env vars are loaded
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';

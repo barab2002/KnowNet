@@ -5,11 +5,13 @@ import { PostsService } from './posts.service';
 import { Post, PostSchema } from './schemas/post.schema';
 
 import { UsersModule } from '../users/users.module';
+import { AiModule } from '../ai/ai.module';
 
 @Module({
   imports: [
     MongooseModule.forFeature([{ name: Post.name, schema: PostSchema }]),
     UsersModule,
+    AiModule,
   ],
   controllers: [PostsController],
   providers: [PostsService],

@@ -7,7 +7,8 @@ export interface Post {
   createdAt: string;
   updatedAt: string;
   imageUrl?: string;
-  authorId?: string; // ID of the user who created the post
+  summary?: string;
+  authorId?: string | { _id: string; name: string; profileImageUrl?: string }; // ID or Populated User Object
   likes: string[];
   savedBy: string[];
   comments: {
@@ -111,9 +112,21 @@ export const getTotalLikesForUser = async (userId: string): Promise<number> => {
   return response.data.totalLikes;
 };
 
+export const searchPosts = async (query: string): Promise<Post[]> => {
+  const response = await axios.get<Post[]>(`${API_URL}/search`, {
+    params: { q: query },
+  });
+  return response.data;
+};
+
+export const summarizePost = async (postId: string): Promise<Post> => {
+  const response = await axios.post<Post>(`${API_URL}/${postId}/summarize`);
+  return response.data;
+};
+
 export const deletePost = async (
   postId: string,
-  userId: string,
+  userId: string, // Kept for interface compatibility but unused in payload
 ): Promise<void> => {
-  await axios.delete(`${API_URL}/${postId}`, { data: { userId } });
+  await axios.delete(`${API_URL}/${postId}`);
 };
