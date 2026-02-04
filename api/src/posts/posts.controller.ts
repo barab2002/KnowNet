@@ -6,6 +6,7 @@ import {
   Param,
   UseInterceptors,
   UploadedFile,
+  Query,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Express } from 'express';
@@ -22,6 +23,21 @@ export class PostsController {
   @ApiOperation({ summary: 'Get all unique tags' })
   async getTags() {
     return this.postsService.getUniqueTags();
+  }
+
+  @Get('search')
+  @ApiOperation({ summary: 'Search posts by text' })
+  async search(@Query('q') query: string) {
+    if (!query) {
+      return [];
+    }
+    return this.postsService.search(query);
+  }
+
+  @Post(':id/summarize')
+  @ApiOperation({ summary: 'Generate AI summary for post' })
+  async summarize(@Param('id') id: string) {
+    return this.postsService.summarizePost(id);
   }
 
   @Post(':id/like')
