@@ -11,6 +11,9 @@ export class Post {
   @Prop({ type: [String], default: [] })
   tags: string[];
 
+  @Prop({ required: false })
+  summary?: string;
+
   @Prop({ type: String, required: false })
   imageUrl?: string;
 
@@ -41,3 +44,5 @@ export class Post {
 }
 
 export const PostSchema = SchemaFactory.createForClass(Post);
+
+PostSchema.index({ content: 'text', tags: 'text' });

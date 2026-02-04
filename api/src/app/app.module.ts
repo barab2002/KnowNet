@@ -4,6 +4,7 @@ import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { PostsModule } from '../posts/posts.module';
 import { UsersModule } from '../users/users.module';
+import { AiModule } from '../ai/ai.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
@@ -18,6 +19,7 @@ import { AppService } from './app.service';
     ),
     PostsModule,
     UsersModule,
+    AiModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -3,66 +3,35 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Post, PostDocument } from './schemas/post.schema';
 import { CreatePostDto } from './dto/create-post.dto';
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import { UsersService } from '../users/users.service';
+import { AiService } from '../ai/ai.service';
 
 @Injectable()
 export class PostsService {
   private readonly logger = new Logger(PostsService.name);
-  private genAI: GoogleGenerativeAI;
 
   constructor(
     @InjectModel(Post.name) private postModel: Model<PostDocument>,
     private readonly usersService: UsersService,
-  ) {
-    // Initialize Gemini only if API key is available
-    if (process.env.GEMINI_API_KEY) {
-      this.genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    }
-  }
+    private readonly aiService: AiService,
+  ) {}
 
   async create(createPostDto: CreatePostDto): Promise<Post> {
     const { content, authorId } = createPostDto;
-    let tags: string[] = [];
 
-    // AI Tag Generation Logic
-    if (this.genAI) {
-      try {
-        const model = this.genAI.getGenerativeModel({
-          model: 'gemini-1.5-flash',
-        });
-        const prompt = `You are a helpful assistant that extracts tags from text. Return only the tags as a comma-separated list, e.g. 'tech, ai, coding'. Do not include any other text. Extract tags from this content: ${content}`;
-
-        const result = await model.generateContent(prompt);
-        const generatedText = result.response.text();
-
-        if (generatedText) {
-          tags = generatedText.split(',').map((tag) => tag.trim());
-        }
-      } catch (error) {
-        this.logger.error('Failed to generate tags with Gemini', error);
-      }
-    } else {
-      // Mock fallback if no API key
-      this.logger.warn('GEMINI_API_KEY not found, using mock tags');
-      tags = ['mock-tag', 'knownet'];
-    }
+    // Generate summary using AiService (tags are no longer AI-generated)
+    const summary = await this.aiService.generateSummary(content);
+    const tags: string[] = []; // Default empty tags
 
     const createdPost = new this.postModel({
       content,
       tags,
+      summary,
       authorId,
     });
 
     if (authorId) {
-      await this.usersService
-        .incrementPostsCount(authorId)
-        .catch((err) =>
-          this.logger.error(
-            `Failed to increment post count for user ${authorId}`,
-            err,
-          ),
-        );
+      this.incrementPostCount(authorId);
     }
 
     return createdPost.save();
@@ -77,47 +46,21 @@ export class PostsService {
     imageUrl?: string,
   ): Promise<Post> {
     const { content, authorId } = createPostDto;
-    let tags: string[] = [];
 
-    // AI Tag Generation Logic
-    if (this.genAI) {
-      try {
-        const model = this.genAI.getGenerativeModel({
-          model: 'gemini-1.5-flash',
-        });
-        const prompt = `You are a helpful assistant that extracts tags from text. Return only the tags as a comma-separated list, e.g. 'tech, ai, coding'. Do not include any other text. Extract tags from this content: ${content}`;
-
-        const result = await model.generateContent(prompt);
-        const generatedText = result.response.text();
-
-        if (generatedText) {
-          tags = generatedText.split(',').map((tag) => tag.trim());
-        }
-      } catch (error) {
-        this.logger.error('Failed to generate tags with Gemini', error);
-      }
-    } else {
-      // Mock fallback if no API key
-      this.logger.warn('GEMINI_API_KEY not found, using mock tags');
-      tags = ['mock-tag', 'knownet'];
-    }
+    // Generate summary using AiService (tags are no longer AI-generated)
+    const summary = await this.aiService.generateSummary(content);
+    const tags: string[] = []; // Default empty tags
 
     const createdPost = new this.postModel({
       content,
       tags,
+      summary,
       imageUrl,
       authorId,
     });
 
     if (authorId) {
-      await this.usersService
-        .incrementPostsCount(authorId)
-        .catch((err) =>
-          this.logger.error(
-            `Failed to increment post count for user ${authorId}`,
-            err,
-          ),
-        );
+      this.incrementPostCount(authorId);
     }
 
     return createdPost.save();
@@ -130,29 +73,13 @@ export class PostsService {
     const index = post.likes.indexOf(userId);
     if (index === -1) {
       post.likes.push(userId);
-      // Increment author's likesReceived
       if (post.authorId) {
-        await this.usersService
-          .incrementLikesReceived(post.authorId)
-          .catch((err) =>
-            this.logger.error(
-              `Failed to increment likesReceived for user ${post.authorId}`,
-              err,
-            ),
-          );
+        this.incrementLikesReceived(post.authorId);
       }
     } else {
       post.likes.splice(index, 1);
-      // Decrement author's likesReceived
       if (post.authorId) {
-        await this.usersService
-          .decrementLikesReceived(post.authorId)
-          .catch((err) =>
-            this.logger.error(
-              `Failed to decrement likesReceived for user ${post.authorId}`,
-              err,
-            ),
-          );
+        this.decrementLikesReceived(post.authorId);
       }
     }
     return post.save();
@@ -188,8 +115,6 @@ export class PostsService {
   }
 
   async getPostsByUser(userId: string): Promise<Post[]> {
-    // If mocking is still needed for old posts without authorId, keep find({}) or migrate data
-    // For now, let's filter by authorId to satisfy the user request "see it in my profile"
     return this.postModel
       .find({ authorId: userId })
       .sort({ createdAt: -1 })
@@ -223,5 +148,54 @@ export class PostsService {
     ]);
 
     return result.length > 0 ? result[0].totalLikes : 0;
+  }
+
+  async search(query: string): Promise<Post[]> {
+    return this.postModel
+      .find({ $text: { $search: query } }, { score: { $meta: 'textScore' } })
+      .sort({ score: { $meta: 'textScore' } })
+      .exec();
+  }
+
+  async summarizePost(postId: string): Promise<Post> {
+    const post = await this.postModel.findById(postId);
+    if (!post) throw new Error('Post not found');
+
+    const summary = await this.aiService.generateSummary(post.content);
+    post.summary = summary;
+    return post.save();
+  }
+
+  private async incrementPostCount(authorId: string) {
+    await this.usersService
+      .incrementPostsCount(authorId)
+      .catch((err) =>
+        this.logger.error(
+          `Failed to increment post count for user ${authorId}`,
+          err,
+        ),
+      );
+  }
+
+  private async incrementLikesReceived(authorId: string) {
+    await this.usersService
+      .incrementLikesReceived(authorId)
+      .catch((err) =>
+        this.logger.error(
+          `Failed to increment likesReceived for user ${authorId}`,
+          err,
+        ),
+      );
+  }
+
+  private async decrementLikesReceived(authorId: string) {
+    await this.usersService
+      .decrementLikesReceived(authorId)
+      .catch((err) =>
+        this.logger.error(
+          `Failed to decrement likesReceived for user ${authorId}`,
+          err,
+        ),
+      );
   }
 }
