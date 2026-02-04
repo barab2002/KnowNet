@@ -138,11 +138,26 @@ export const SemanticSearchPage = () => {
               >
                 <div className="flex justify-between items-start mb-3">
                   <div className="flex items-center gap-3">
-                    <div className="size-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-500">
-                      <span className="material-symbols-outlined">person</span>
+                    <div className="size-10 rounded-full bg-slate-200 overflow-hidden flex items-center justify-center text-slate-500">
+                      {typeof post.authorId === 'object' &&
+                      post.authorId?.profileImageUrl ? (
+                        <img
+                          src={post.authorId.profileImageUrl}
+                          alt="Author avatar"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span className="material-symbols-outlined">
+                          person
+                        </span>
+                      )}
                     </div>
                     <div>
-                      <p className="font-semibold text-sm">{'Scholar'}</p>
+                      <p className="font-semibold text-sm">
+                        {typeof post.authorId === 'object'
+                          ? post.authorId?.name
+                          : 'KnowNet User'}
+                      </p>
                       <p className="text-xs text-slate-500 dark:text-[#92adc9]">
                         {new Date(post.createdAt).toLocaleDateString()}
                       </p>
