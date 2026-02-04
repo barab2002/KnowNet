@@ -60,7 +60,7 @@ export const Layout = () => {
               }
             >
               <span className="material-icons-round">explore</span>
-              Semantic Search
+              Search
             </NavLink>
             <NavLink
               to="/student-dashboard"
