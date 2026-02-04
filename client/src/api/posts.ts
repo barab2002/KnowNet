@@ -8,7 +8,7 @@ export interface Post {
   updatedAt: string;
   imageUrl?: string;
   summary?: string;
-  authorId?: string; // ID of the user who created the post
+  authorId?: string | { _id: string; name: string; profileImageUrl?: string }; // ID or Populated User Object
   likes: string[];
   savedBy: string[];
   comments: {
@@ -126,7 +126,7 @@ export const summarizePost = async (postId: string): Promise<Post> => {
 
 export const deletePost = async (
   postId: string,
-  userId: string,
+  userId: string, // Kept for interface compatibility but unused in payload
 ): Promise<void> => {
-  await axios.delete(`${API_URL}/${postId}`, { data: { userId } });
+  await axios.delete(`${API_URL}/${postId}`);
 };
