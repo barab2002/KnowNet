@@ -96,6 +96,7 @@ export class PostsController {
   }
 
   @Post()
+  @UseGuards(AuthGuard('jwt')) // Enforce login for posting
   @UseInterceptors(FileInterceptor('image'))
   @ApiOperation({ summary: 'Create a new post with optional image' })
   @ApiResponse({
@@ -104,8 +105,13 @@ export class PostsController {
   })
   async create(
     @Body() createPostDto: CreatePostDto,
+    @Req() req,
     @UploadedFile() image?: any,
   ) {
+    // Enforce authorId from token
+    createPostDto.authorId = req.user._id;
+
+    // In a real app, upload to S3/Cloudinary here.
     // In a real app, upload to S3/Cloudinary here.
     // For local demo, we'll base64 encode small images or just skip file persistence complexity (recommend using a cloud service for better perf).
     // Let's implement basics: if image exists, we'll pretend we got a URL.
@@ -132,8 +138,9 @@ export class PostsController {
   }
 
   @Delete(':id')
+  @UseGuards(AuthGuard('jwt'))
   @ApiOperation({ summary: 'Delete a post' })
-  async delete(@Param('id') id: string, @Body('userId') userId: string) {
-    return this.postsService.delete(id, userId);
+  async delete(@Param('id') id: string, @Req() req) {
+    return this.postsService.delete(id, req.user._id);
   }
 }

@@ -17,7 +17,7 @@ export class Post {
   @Prop({ type: String, required: false })
   imageUrl?: string;
 
-  @Prop({ type: String, required: false }) // Making optional for backward compatibility
+  @Prop({ type: String, ref: 'User', required: false }) // Making optional for backward compatibility
   authorId?: string;
 
   @Prop({ type: [String], default: [] })
