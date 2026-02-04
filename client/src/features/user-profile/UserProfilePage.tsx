@@ -295,7 +295,14 @@ export const UserProfilePage = () => {
         {/* Feed Area */}
         <div className="flex flex-col gap-4">
           {posts.map((post) => (
-            <PostCard key={post._id} post={post} onUpdate={fetchPosts} />
+            <PostCard
+              key={post._id}
+              post={post}
+              onUpdate={() => {
+                fetchPosts();
+                fetchUserProfile();
+              }}
+            />
           ))}
 
           {posts.length === 0 && (

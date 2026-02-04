@@ -123,3 +123,10 @@ export const summarizePost = async (postId: string): Promise<Post> => {
   const response = await axios.post<Post>(`${API_URL}/${postId}/summarize`);
   return response.data;
 };
+
+export const deletePost = async (
+  postId: string,
+  userId: string,
+): Promise<void> => {
+  await axios.delete(`${API_URL}/${postId}`, { data: { userId } });
+};
