@@ -97,25 +97,6 @@ export const Layout = () => {
               Logout
             </button>
           </nav>
-          <div className="pt-6">
-            <h3 className="px-4 text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">
-              Trending Tags
-            </h3>
-            <div className="flex flex-wrap gap-2 px-2">
-              <span className="px-3 py-1.5 bg-slate-100 dark:bg-card-dark rounded-lg text-xs font-medium cursor-pointer hover:bg-primary/20 transition-colors">
-                #FinalsWeek
-              </span>
-              <span className="px-3 py-1.5 bg-slate-100 dark:bg-card-dark rounded-lg text-xs font-medium cursor-pointer hover:bg-primary/20 transition-colors">
-                #Hackathon2024
-              </span>
-              <span className="px-3 py-1.5 bg-slate-100 dark:bg-card-dark rounded-lg text-xs font-medium cursor-pointer hover:bg-primary/20 transition-colors">
-                #CampusSafety
-              </span>
-              <span className="px-3 py-1.5 bg-slate-100 dark:bg-card-dark rounded-lg text-xs font-medium cursor-pointer hover:bg-primary/20 transition-colors">
-                #CS50
-              </span>
-            </div>
-          </div>
         </aside>
 
         {/* Main Content Area - This is where pages will be injected */}
