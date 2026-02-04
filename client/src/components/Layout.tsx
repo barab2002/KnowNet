@@ -63,15 +63,6 @@ export const Layout = () => {
               Semantic Search
             </NavLink>
             <NavLink
-              to="/student-dashboard"
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${isActive ? 'bg-primary/10 text-primary font-semibold' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-card-dark'}`
-              }
-            >
-              <span className="material-icons-round">dashboard</span>
-              Dashboard
-            </NavLink>
-            <NavLink
               to="/user-profile"
               className={({ isActive }) =>
                 `flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${isActive ? 'bg-primary/10 text-primary font-semibold' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-card-dark'}`
@@ -145,14 +136,6 @@ export const Layout = () => {
         <button className="bg-primary text-white p-2 rounded-full shadow-lg -mt-8 border-4 border-background-light dark:border-background-dark">
           <span className="material-icons-round">add</span>
         </button>
-        <NavLink
-          to="/student-dashboard"
-          className={({ isActive }) =>
-            isActive ? 'text-primary' : 'text-slate-400'
-          }
-        >
-          <span className="material-icons-round">dashboard</span>
-        </NavLink>
         <NavLink
           to="/user-profile"
           className={({ isActive }) =>
