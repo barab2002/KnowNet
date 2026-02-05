@@ -1,14 +1,41 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { getPosts, Post } from '../../api/posts';
 import { PostCard } from '../../components/PostCard';
 import { PostSkeleton } from '../../components/PostSkeleton';
 import { useAuth } from '../../contexts/AuthContext';
 import { CreatePostForm } from '../../components/CreatePostForm';
 
+const POSTS_PER_PAGE = 10;
+
 export const FeedPage = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [initialLoad, setInitialLoad] = useState(true);
+
+  // Observer for infinite scroll
+  const observer = useRef<IntersectionObserver | null>(null);
+  const lastPostElementRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      if (isLoading) return;
+      if (observer.current) observer.current.disconnect();
+
+      observer.current = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting && hasMore) {
+          setPage((prevPage) => prevPage + 1);
+        }
+      });
+
+      if (node) observer.current.observe(node);
+    },
+    [isLoading, hasMore],
+  );
+
+  const fetchPosts = async (reset = false) => {
+    if (!hasMore && !reset) return;
 
   const fetchPosts = () => {
     setIsLoading(true);
@@ -18,6 +45,7 @@ export const FeedPage = () => {
       .finally(() => setIsLoading(false));
   };
 
+  // Initial load or pagination
   useEffect(() => {
     fetchPosts();
 
@@ -44,7 +72,7 @@ export const FeedPage = () => {
       <div className="space-y-6">
         {/* Inline Create Post Form */}
         <CreatePostForm
-          onSuccess={fetchPosts}
+          onSuccess={handleRefresh}
           placeholder="What knowledge would you like to share today?"
         />
 
@@ -56,28 +84,39 @@ export const FeedPage = () => {
           </div>
         ) : posts.length > 0 ? (
           <div className="flex flex-col gap-6 animate-in fade-in duration-1000">
-            {posts.map((post) => (
-              <PostCard key={post._id} post={post} onUpdate={fetchPosts} />
-            ))}
+            {posts.map((post, index) => {
+              if (index === posts.length - 1) {
+                return (
+                  <div key={post._id} ref={lastPostElementRef}>
+                    <PostCard post={post} onUpdate={handleRefresh} />
+                  </div>
+                );
+              }
+              return (
+                <PostCard key={post._id} post={post} onUpdate={handleRefresh} />
+              );
+            })}
           </div>
         ) : (
-          <div className="py-20 text-center space-y-4 bg-slate-50 dark:bg-card-dark/30 rounded-3xl border-2 border-dashed border-slate-200 dark:border-slate-800">
-            <div className="size-16 bg-slate-200 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto text-slate-400">
-              <span className="material-icons-round text-3xl">post_add</span>
+          !initialLoad && (
+            <div className="py-20 text-center space-y-4 bg-slate-50 dark:bg-card-dark/30 rounded-3xl border-2 border-dashed border-slate-200 dark:border-slate-800">
+              <div className="size-16 bg-slate-200 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto text-slate-400">
+                <span className="material-icons-round text-3xl">post_add</span>
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                  No posts yet
+                </h3>
+                <p className="text-slate-500 text-sm">
+                  Be the first to share something with your peers!
+                </p>
+              </div>
             </div>
-            <div>
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-                No posts yet
-              </h3>
-              <p className="text-slate-500 text-sm">
-                Be the first to share something with your peers!
-              </p>
-            </div>
-          </div>
+          )
         )}
 
         {/* Infinite Scroll Loader */}
-        {posts.length > 5 && (
+        {isLoading && (
           <div className="py-12 flex flex-col items-center gap-4">
             <div className="flex gap-2">
               <div className="w-3 h-3 bg-primary rounded-full animate-bounce [animation-duration:800ms]"></div>

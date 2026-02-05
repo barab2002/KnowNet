@@ -15,7 +15,7 @@ interface PostCardProps {
   onUpdate?: () => void; // Callback to refresh parent list
 }
 
-export const PostCard: React.FC<PostCardProps> = ({ post, onUpdate }) => {
+export const PostCard = React.memo(({ post, onUpdate }: PostCardProps) => {
   // We'll use local state for immediate feedback but rely on props for source of truth
   const [commentText, setCommentText] = useState('');
   const [showComments, setShowComments] = useState(false);
@@ -128,6 +128,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onUpdate }) => {
                     src={displayImage}
                     alt="Author avatar"
                     className="w-full h-full object-cover"
+                    loading="lazy"
                   />
                 ) : (
                   <span className="material-icons-round text-slate-400 text-3xl flex items-center justify-center h-full">
@@ -191,6 +192,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onUpdate }) => {
                 src={post.imageUrl}
                 alt="Post attachment"
                 className="w-full h-auto object-cover max-h-[500px]"
+                loading="lazy"
               />
             </div>
           )}
@@ -343,4 +345,4 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onUpdate }) => {
       </Modal>
     </>
   );
-};
+});

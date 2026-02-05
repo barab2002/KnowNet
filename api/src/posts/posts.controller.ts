@@ -133,8 +133,11 @@ export class PostsController {
   @Get()
   @ApiOperation({ summary: 'Get all posts' })
   @ApiResponse({ status: 200, description: 'Return all posts.' })
-  findAll() {
-    return this.postsService.findAll();
+  async findAll(
+    @Query('limit') limit: number = 10,
+    @Query('skip') skip: number = 0,
+  ) {
+    return this.postsService.findAll(Number(limit), Number(skip));
   }
 
   @Delete(':id')
