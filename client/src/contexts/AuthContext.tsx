@@ -50,40 +50,26 @@ interface AuthStorage {
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const getInitialAuth = (): { user: User | null; token: string | null } => {
+    try {
+      const rememberMe = localStorage.getItem(REMEMBER_ME_KEY) === 'true';
+      const raw = rememberMe
+        ? localStorage.getItem(AUTH_STORAGE_KEY)
+        : sessionStorage.getItem(AUTH_STORAGE_KEY);
 
-  // Load auth state from localStorage on mount
-  useEffect(() => {
-    const loadAuthState = () => {
-      try {
-        const rememberMe = localStorage.getItem(REMEMBER_ME_KEY) === 'true';
-        if (rememberMe) {
-          const authData = localStorage.getItem(AUTH_STORAGE_KEY);
-          if (authData) {
-            const parsed: AuthStorage = JSON.parse(authData);
-            setUser(parsed.user);
-            setToken(parsed.token);
-          }
-        } else {
-          // Check sessionStorage for current session
-          const sessionAuth = sessionStorage.getItem(AUTH_STORAGE_KEY);
-          if (sessionAuth) {
-            const parsed: AuthStorage = JSON.parse(sessionAuth);
-            setUser(parsed.user);
-            setToken(parsed.token);
-          }
-        }
-      } catch (error) {
-        console.error('Failed to load auth state:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+      if (!raw) return { user: null, token: null };
+      const parsed: AuthStorage = JSON.parse(raw);
+      return { user: parsed.user, token: parsed.token };
+    } catch (error) {
+      console.error('Failed to load auth state:', error);
+      return { user: null, token: null };
+    }
+  };
 
-    loadAuthState();
-  }, []);
+  const initialAuth = getInitialAuth();
+  const [user, setUser] = useState<User | null>(initialAuth.user);
+  const [token, setToken] = useState<string | null>(initialAuth.token);
+  const [isLoading] = useState(false);
 
   // Update Axios default header when token changes
   useEffect(() => {
