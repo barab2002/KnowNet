@@ -1,13 +1,22 @@
-import { getGreeting } from '../support/app.po';
+describe('client-e2e smoke', () => {
+  it('redirects unauthenticated users to login', () => {
+    cy.visit('/');
+    cy.location('pathname').should('eq', '/login');
+    cy.get('input#email', { timeout: 15000 }).should('be.visible');
+  });
 
-describe('client-e2e', () => {
-  beforeEach(() => cy.visit('/'));
+  it('renders the login form', () => {
+    cy.visit('/');
+    cy.location('pathname').should('eq', '/login');
+    cy.get('input#email').should('be.visible').type('e2e-user@knownet.dev');
+    cy.get('input#password').should('be.visible').type('password', { log: false });
+    cy.contains('button', 'Sign In').should('be.enabled');
+  });
 
-  it('should display welcome message', () => {
-    // Custom command example, see `../support/commands.ts` file
-    cy.login('my-email@something.com', 'myPassword');
-
-    // Function helper example, see `../support/app.po.ts` file
-    getGreeting().contains(/Welcome/);
+  it('allows login and shows the feed header', () => {
+    cy.intercept('GET', '/api/posts*', { posts: [], total: 0 }).as('getPosts');
+    cy.login('e2e-user@knownet.dev', 'password');
+    cy.wait('@getPosts');
+    cy.contains('h1', 'Welcome back').should('be.visible');
   });
 });
