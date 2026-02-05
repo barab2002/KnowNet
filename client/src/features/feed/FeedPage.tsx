@@ -1,15 +1,21 @@
 import React, { useEffect, useState } from 'react';
 import { getPosts, Post } from '../../api/posts';
 import { PostCard } from '../../components/PostCard';
+import { PostSkeleton } from '../../components/PostSkeleton';
 import { useAuth } from '../../contexts/AuthContext';
 import { CreatePostForm } from '../../components/CreatePostForm';
 
 export const FeedPage = () => {
   const [posts, setPosts] = useState<Post[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
 
   const fetchPosts = () => {
-    getPosts().then(setPosts).catch(console.error);
+    setIsLoading(true);
+    getPosts()
+      .then(setPosts)
+      .catch(console.error)
+      .finally(() => setIsLoading(false));
   };
 
   useEffect(() => {
@@ -35,7 +41,13 @@ export const FeedPage = () => {
           placeholder="What knowledge would you like to share today?"
         />
 
-        {posts.length > 0 ? (
+        {isLoading ? (
+          <div className="flex flex-col gap-6">
+            {[...Array(3)].map((_, i) => (
+              <PostSkeleton key={i} />
+            ))}
+          </div>
+        ) : posts.length > 0 ? (
           <div className="flex flex-col gap-6 animate-in fade-in duration-1000">
             {posts.map((post) => (
               <PostCard key={post._id} post={post} onUpdate={fetchPosts} />
