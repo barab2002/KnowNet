@@ -309,23 +309,30 @@ export const UserProfilePage = () => {
             <p className="text-center text-slate-500 py-10">No posts found.</p>
           )}
 
-          {/* Create New Post Prompt */}
-          <div className="mt-4 p-8 border-2 border-dashed border-slate-200 dark:border-[#324d67] rounded-xl flex flex-col items-center justify-center gap-4 text-center">
-            <div className="size-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-              <span className="material-symbols-outlined">add_circle</span>
-            </div>
-            <div>
+          {/* Create New Post Prompt (show connected user's avatar) */}
+          <div className="mt-4 p-6 border-2 border-dashed border-slate-200 dark:border-[#324d67] rounded-xl flex items-center gap-4">
+            <div
+              className="w-14 h-14 rounded-full bg-center bg-cover border border-slate-200 dark:border-[#324d67] shrink-0"
+              style={{
+                backgroundImage: user?.profileImageUrl
+                  ? `url(${user.profileImageUrl})`
+                  : `url(https://lh3.googleusercontent.com/aida-public/AB6AXuCvtexDhPhar8YHNlSTSnW4u-Cr6-wLTamZ6XqrJcCGbnv8HsimarRRtRyBOXOivrORYRp5w4dPCWMc7KGnm8X9k3kPAXU9d6G4gN-ayhLHw5yHnG5Mh4wYJRpprIH9Rm8Q56nNjDmxPmfrhn5OkejcNpGBpQHyRZNnCYuEozb0BKzo27GFFl5ZPMAKFtOY3Kybd8KWCrsbCGJYc977RMJ4LdWMuB3NpS4jMZy4Vl058nKZE5lgpsUsafPMMG57ba5uOyNwIkIKMg)`,
+              }}
+            ></div>
+            <div className="flex-1 text-left">
               <p className="font-bold">Share something new</p>
               <p className="text-sm text-slate-500 dark:text-[#92adc9]">
-                Your thoughts could help fellow students.
+                {user?.name ? `What's on your mind, ${user.name.split(' ')[0]}?` : 'Your thoughts could help fellow students.'}
               </p>
             </div>
-            <button
-              onClick={() => setIsCreatePostModalOpen(true)}
-              className="bg-primary text-white px-6 py-2 rounded-lg font-bold text-sm hover:scale-105 active:scale-95 transition-transform"
-            >
-              Create Post
-            </button>
+            <div>
+              <button
+                onClick={() => setIsCreatePostModalOpen(true)}
+                className="bg-primary text-white px-6 py-2 rounded-lg font-bold text-sm hover:scale-105 active:scale-95 transition-transform"
+              >
+                Create Post
+              </button>
+            </div>
           </div>
         </div>
       </div>
