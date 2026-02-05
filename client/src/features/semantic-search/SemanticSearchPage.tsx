@@ -79,41 +79,6 @@ export const SemanticSearchPage = () => {
           ✨ Understanding context, intent, and community sentiment
         </p>
 
-        {/* Trending Tags Section - Static for now, could be dynamic */}
-        <div className="mt-12">
-          <div className="flex items-center justify-between mb-4 px-1">
-            <h3 className="text-lg font-bold leading-tight tracking-tight flex items-center gap-2">
-              <span className="material-symbols-outlined text-primary">
-                trending_up
-              </span>
-              AI-Generated Trending Tags
-            </h3>
-            <button className="text-primary text-sm font-semibold hover:underline">
-              Refresh
-            </button>
-          </div>
-          <div className="flex flex-wrap gap-2 px-1">
-            <button className="px-4 py-2 rounded-full bg-primary/20 text-primary border border-primary/30 text-sm font-medium hover:bg-primary hover:text-white transition-all">
-              #LateNightStudy
-            </button>
-            <button className="px-4 py-2 rounded-full bg-slate-100 dark:bg-[#233648] text-slate-700 dark:text-[#92adc9] text-sm font-medium hover:bg-primary/10 transition-all">
-              #HackathonPrep
-            </button>
-            <button className="px-4 py-2 rounded-full bg-slate-100 dark:bg-[#233648] text-slate-700 dark:text-[#92adc9] text-sm font-medium hover:bg-primary/10 transition-all">
-              #QuietZones
-            </button>
-            <button className="px-4 py-2 rounded-full bg-slate-100 dark:bg-[#233648] text-slate-700 dark:text-[#92adc9] text-sm font-medium hover:bg-primary/10 transition-all">
-              #EspressoDeals
-            </button>
-            <button className="px-4 py-2 rounded-full bg-slate-100 dark:bg-[#233648] text-slate-700 dark:text-[#92adc9] text-sm font-medium hover:bg-primary/10 transition-all">
-              #GroupProjects
-            </button>
-            <button className="px-4 py-2 rounded-full bg-slate-100 dark:bg-[#233648] text-slate-700 dark:text-[#92adc9] text-sm font-medium hover:bg-primary/10 transition-all">
-              #CommuterTips
-            </button>
-          </div>
-        </div>
-
         {/* Results Section */}
         {hasSearched && (
           <div className="mt-12 space-y-6">
