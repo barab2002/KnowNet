@@ -14,6 +14,13 @@ export const FeedPage = () => {
 
   useEffect(() => {
     fetchPosts();
+
+    // Poll for updates (AI tags/summaries)
+    const interval = setInterval(() => {
+      fetchPosts(); // Simple re-fetch for now
+    }, 5000);
+
+    return () => clearInterval(interval);
   }, []);
 
   return (

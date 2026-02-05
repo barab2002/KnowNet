@@ -36,52 +36,83 @@ export class PostsService {
   ): Promise<Post> {
     const { content, authorId } = createPostDto;
 
-    // Generate summary using AiService
-    const summary = await this.aiService.generateSummary(content);
-
-    // User-defined hashtags
-    let userTags: string[] = [];
-    const hashtags = content.match(/#(\w+)/g);
-    if (hashtags) {
-      userTags = [...new Set(hashtags.map((tag) => tag.substring(1)))];
-    }
-
-    // AI/Fallback keywords (only if no user tags)
-    let aiTags: string[] = [];
-    if (userTags.length === 0) {
-      const keywords = content
-        .toLowerCase()
-        .replace(/[^\w\s]/g, '')
-        .split(/\s+/)
-        .filter((word) => word.length > 4)
-        .filter(
-          (word) =>
-            !['about', 'there', 'their', 'would', 'could', 'should'].includes(
-              word,
-            ),
-        );
-      aiTags = [...new Set(keywords)].slice(0, 3);
-      if (aiTags.length === 0) aiTags = ['General', 'Community'];
-    }
-
-    // Combined tags for backward compatibility / text search
-    const tags = [...userTags, ...aiTags];
-
+    // 1. Create and save post immediately with basic data
     const createdPost = new this.postModel({
       content,
-      tags,
-      userTags,
-      aiTags,
-      summary,
+      tags: [], // Will be updated by background process
+      userTags: [],
+      aiTags: [],
+      summary: '',
       imageUrl,
       authorId,
     });
+
+    await createdPost.save();
 
     if (authorId) {
       this.incrementPostCount(authorId);
     }
 
-    return createdPost.save();
+    // 2. Trigger background AI processing
+    this.processAiInBackground(createdPost._id.toString(), content).catch(
+      (err) =>
+        this.logger.error(
+          `Background AI processing failed for post ${createdPost._id}`,
+          err,
+        ),
+    );
+
+    return createdPost;
+  }
+
+  // Helper for background processing
+  private async processAiInBackground(postId: string, content: string) {
+    this.logger.log(`Starting background AI processing for post ${postId}`);
+
+    try {
+      // Generate summary
+      const summary = await this.aiService.generateSummary(content);
+
+      // User-defined hashtags
+      let userTags: string[] = [];
+      const hashtags = content.match(/#(\w+)/g);
+      if (hashtags) {
+        userTags = [...new Set(hashtags.map((tag) => tag.substring(1)))];
+      }
+
+      // AI/Fallback keywords
+      let aiTags: string[] = [];
+      if (userTags.length === 0) {
+        const keywords = content
+          .toLowerCase()
+          .replace(/[^\w\s]/g, '')
+          .split(/\s+/)
+          .filter((word) => word.length > 4)
+          .filter(
+            (word) =>
+              !['about', 'there', 'their', 'would', 'could', 'should'].includes(
+                word,
+              ),
+          );
+        aiTags = [...new Set(keywords)].slice(0, 3);
+        if (aiTags.length === 0) aiTags = ['General', 'Community'];
+      }
+
+      // Combined tags
+      const tags = [...userTags, ...aiTags];
+
+      // Update the post
+      await this.postModel.findByIdAndUpdate(postId, {
+        summary,
+        tags,
+        userTags,
+        aiTags,
+      });
+
+      this.logger.log(`Completed background AI processing for post ${postId}`);
+    } catch (error) {
+      this.logger.error(`Failed to process AI for post ${postId}`, error);
+    }
   }
 
   async toggleLike(postId: string, userId: string): Promise<Post> {
