@@ -9,21 +9,21 @@ export default defineConfig(() => ({
   cacheDir: '../node_modules/.vite/client',
   server: {
     port: 4200,
-    host: 'localhost',
+    host: '127.0.0.1',
     proxy: {
       '/api': {
-        target: 'http://localhost:3000',
+        target: 'http://127.0.0.1:3000',
         changeOrigin: true,
       },
       '/uploads': {
-        target: 'http://localhost:3000',
+        target: 'http://127.0.0.1:3000',
         changeOrigin: true,
       },
     },
   },
   preview: {
     port: 4200,
-    host: 'localhost',
+    host: '127.0.0.1',
   },
   plugins: [react(), nxViteTsPaths(), nxCopyAssetsPlugin(['*.md'])],
   // Uncomment this if you are using workers.
