@@ -42,6 +42,9 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onUpdate }) => {
   const authorImage =
     typeof post.authorId === 'object' ? post.authorId?.profileImageUrl : null;
 
+  const defaultAvatar =
+    'https://lh3.googleusercontent.com/aida-public/AB6AXuCvtexDhPhar8YHNlSTSnW4u-Cr6-wLTamZ6XqrJcCGbnv8HsimarRRtRyBOXOivrORYRp5w4dPCWMc7KGnm8X9k3kPAXU9d6G4gN-ayhLHw5yHnG5Mh4wYJRpprIH9Rm8Q56nNjDmxPmfrhn5OkejcNpGBpQHyRZNnCYuEozb0BKzo27GFFl5ZPMAKFtOY3Kybd8KWCrsbCGJYc977RMJ4LdWMuB3NpS4jMZy4Vl058nKZE5lgpsUsafPMMG57ba5uOyNwIkIKMg';
+
   const [fetchedAuthor, setFetchedAuthor] = React.useState<{
     _id?: string;
     name?: string;
@@ -154,17 +157,11 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onUpdate }) => {
           <div className="flex justify-between items-start mb-4">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-full overflow-hidden bg-slate-200">
-                {displayImage ? (
-                  <img
-                    src={displayImage}
-                    alt="Author avatar"
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <span className="material-icons-round text-slate-400 text-3xl flex items-center justify-center h-full">
-                    person
-                  </span>
-                )}
+                <img
+                  src={displayImage || defaultAvatar}
+                  alt={displayName}
+                  className="w-full h-full object-cover"
+                />
               </div>
               <div>
                 <h4 className="font-bold text-slate-900 dark:text-white leading-tight">
