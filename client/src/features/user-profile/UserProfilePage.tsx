@@ -81,7 +81,26 @@ export const UserProfilePage = () => {
         promise = getSavedPosts(currentUserId);
         break;
     }
-    promise?.then(setPosts).catch(console.error);
+    promise
+      ?.then(async (res: Post[]) => {
+        // Ensure posts on profile page show the connected user's avatar when applicable
+        const mapped = res.map((p) => {
+          const authorIdStr = typeof p.authorId === 'object' ? p.authorId._id : p.authorId;
+          if (authorIdStr === currentUserId && authUser) {
+            return {
+              ...p,
+              authorId: {
+                _id: authUser._id,
+                name: authUser.name,
+                profileImageUrl: authUser.profileImageUrl,
+              } as any,
+            } as Post;
+          }
+          return p;
+        });
+        setPosts(mapped);
+      })
+      .catch(console.error);
   };
 
   useEffect(() => {
