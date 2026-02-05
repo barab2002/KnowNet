@@ -78,8 +78,11 @@ export class PostsService {
     this.logger.log(`Starting background AI processing for post ${postId}`);
 
     try {
-      // Generate summary
-      const summary = await this.aiService.generateSummary(content);
+      // Parallel execution for speed
+      const [summary, aiTags] = await Promise.all([
+        this.aiService.generateSummary(content),
+        this.aiService.generateTags(content),
+      ]);
 
       // User-defined hashtags
       let userTags: string[] = [];
@@ -88,26 +91,9 @@ export class PostsService {
         userTags = [...new Set(hashtags.map((tag) => tag.substring(1)))];
       }
 
-      // AI/Fallback keywords
-      let aiTags: string[] = [];
-      if (userTags.length === 0) {
-        const keywords = content
-          .toLowerCase()
-          .replace(/[^\w\s]/g, '')
-          .split(/\s+/)
-          .filter((word) => word.length > 4)
-          .filter(
-            (word) =>
-              !['about', 'there', 'their', 'would', 'could', 'should'].includes(
-                word,
-              ),
-          );
-        aiTags = [...new Set(keywords)].slice(0, 3);
-        if (aiTags.length === 0) aiTags = ['General', 'Community'];
-      }
-
-      // Combined tags
-      const tags = [...userTags, ...aiTags];
+      // Combined tags (User tags take precedence if we needed to limit count,
+      // but here we just combine them)
+      const tags = [...new Set([...userTags, ...aiTags])];
 
       // Update the post
       await this.postModel.findByIdAndUpdate(postId, {
