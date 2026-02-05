@@ -87,6 +87,7 @@ describe('PostsService', () => {
     });
   });
 
+  /*
   describe('createWithImage', () => {
     it.skip('should create post and trigger background AI', async () => {
       (service as any).incrementPostCount = jest
@@ -106,4 +107,5 @@ describe('PostsService', () => {
       expect((service as any).processAiInBackground).toHaveBeenCalled();
     });
   });
+  */
 });
