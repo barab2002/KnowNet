@@ -7,7 +7,7 @@ import {
   summarizePost,
   deletePost,
 } from '../api/posts';
-import { getUserProfile } from '../api/users';
+import { getUserProfile, User } from '../api/users';
 import { useAuth } from '../contexts/AuthContext';
 import { Modal } from './Modal';
 
@@ -50,6 +50,37 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onUpdate }) => {
     name?: string;
     profileImageUrl?: string;
   } | null>(null);
+
+  // Cache commenter profiles so comment avatars use stored user photos
+  const [commentAuthors, setCommentAuthors] = React.useState<Record<string, User>>({});
+
+  React.useEffect(() => {
+    let mounted = true;
+    const ids = Array.from(new Set(post.comments.map((c) => c.userId)));
+    const toFetch = ids.filter((id) => id && !commentAuthors[id]);
+    if (toFetch.length === 0) return;
+
+    (async () => {
+      const results: Record<string, User> = {};
+      await Promise.all(
+        toFetch.map(async (id) => {
+          try {
+            const u = await getUserProfile(id);
+            if (u && u._id) results[id] = u;
+          } catch (e) {
+            // ignore
+          }
+        }),
+      );
+      if (mounted && Object.keys(results).length > 0) {
+        setCommentAuthors((prev) => ({ ...prev, ...results }));
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
+  }, [post.comments]);
 
   // Fallback to current user if ID matches (for optimistic updates or legacy)
   const displayName =
@@ -303,19 +334,28 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onUpdate }) => {
           {showComments && (
             <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 animate-in slide-in-from-top-2">
               <div className="space-y-3 mb-4 max-h-60 overflow-y-auto">
-                {post.comments.map((comment, idx) => (
-                  <div
-                    key={idx}
-                    className="bg-slate-50 dark:bg-slate-800/50 p-2 rounded-lg text-sm"
-                  >
-                    <span className="font-bold text-xs text-slate-500 mr-2">
-                      User {comment.userId.slice(0, 4)}
-                    </span>
-                    <span className="text-slate-800 dark:text-slate-200">
-                      {comment.content}
-                    </span>
-                  </div>
-                ))}
+                {post.comments.map((comment, idx) => {
+                  const author = commentAuthors[comment.userId];
+                  const name = author?.name || `User ${comment.userId.slice(0, 4)}`;
+                  const img = author?.profileImageUrl || defaultAvatar;
+                  return (
+                    <div
+                      key={idx}
+                      className="bg-slate-50 dark:bg-slate-800/50 p-2 rounded-lg text-sm flex items-start gap-3"
+                    >
+                      <div className="w-8 h-8 rounded-full overflow-hidden bg-slate-200 flex-shrink-0">
+                        <img src={img} alt={name} className="w-full h-full object-cover" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-bold text-xs text-slate-500">{name}</span>
+                          <span className="text-xs text-slate-400">• {new Date(comment.createdAt).toLocaleTimeString()}</span>
+                        </div>
+                        <div className="text-slate-800 dark:text-slate-200">{comment.content}</div>
+                      </div>
+                    </div>
+                  );
+                })}
                 {post.comments.length === 0 && (
                   <p className="text-xs text-slate-400 italic">
                     No comments yet.

@@ -126,6 +126,11 @@ export const summarizePost = async (postId: string): Promise<Post> => {
   return response.data;
 };
 
+export const getPostById = async (postId: string): Promise<Post> => {
+  const response = await axios.get<Post>(`${API_URL}/${postId}`);
+  return response.data;
+};
+
 export const deletePost = async (
   postId: string,
   userId: string, // Kept for interface compatibility but unused in payload
