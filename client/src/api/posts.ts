@@ -29,8 +29,13 @@ export interface CreatePostDto {
 // In production (Docker/Nginx), Nginx will proxy /api to http://api:3000
 const API_URL = '/api/posts';
 
-export const getPosts = async (): Promise<Post[]> => {
-  const response = await axios.get<Post[]>(API_URL);
+export const getPosts = async (
+  limit: number = 10,
+  skip: number = 0,
+): Promise<{ posts: Post[]; total: number }> => {
+  const response = await axios.get<{ posts: Post[]; total: number }>(API_URL, {
+    params: { limit, skip },
+  });
   return response.data;
 };
 
