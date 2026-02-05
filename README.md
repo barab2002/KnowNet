@@ -80,11 +80,29 @@ npm install
 Create a `.env` file in the project root:
 
 ```env
+# Google Gemini AI
 GEMINI_API_KEY=your_gemini_api_key
-MONGO_URI=mongodb://localhost:27017/knownet
-PORT=3000
+
+# Google OAuth Credentials
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+GOOGLE_CALLBACK_URL=http://localhost:3000/api/auth/google/redirect
+
+# Security
+JWT_SECRET=your_jwt_secret
+
+# Frontend
 FRONTEND_URL=http://localhost:4200
 ```
+
+| Variable | Description | Required |
+| --- | --- | --- |
+| `GEMINI_API_KEY` | Google Gemini API key for AI summarization | Yes |
+| `GOOGLE_CLIENT_ID` | Google OAuth 2.0 client ID | Yes (for Google login) |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth 2.0 client secret | Yes (for Google login) |
+| `GOOGLE_CALLBACK_URL` | OAuth redirect URI | Yes (for Google login) |
+| `JWT_SECRET` | Secret key for signing JWT tokens | Yes |
+| `FRONTEND_URL` | Client app URL (for CORS) | Yes |
 
 ### 3. Run with Docker (recommended)
 
