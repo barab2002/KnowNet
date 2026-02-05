@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { getPosts, Post } from '../../api/posts';
 import { PostCard } from '../../components/PostCard';
+import { PostSkeleton } from '../../components/PostSkeleton';
 import { useAuth } from '../../contexts/AuthContext';
 import { CreatePostForm } from '../../components/CreatePostForm';
 
@@ -8,6 +9,7 @@ const POSTS_PER_PAGE = 10;
 
 export const FeedPage = () => {
   const [posts, setPosts] = useState<Post[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
@@ -35,41 +37,24 @@ export const FeedPage = () => {
   const fetchPosts = async (reset = false) => {
     if (!hasMore && !reset) return;
 
+  const fetchPosts = () => {
     setIsLoading(true);
-    try {
-      const currentPage = reset ? 0 : page;
-      const skip = currentPage * POSTS_PER_PAGE;
-      const { posts: newPosts, total } = await getPosts(POSTS_PER_PAGE, skip);
-
-      setPosts((prev) => {
-        if (reset) return newPosts;
-
-        // Dedup posts just in case
-        const existingIds = new Set(prev.map((p) => p._id));
-        const uniqueNewPosts = newPosts.filter((p) => !existingIds.has(p._id));
-        return [...prev, ...uniqueNewPosts];
-      });
-
-      setHasMore(skip + newPosts.length < total);
-    } catch (err) {
-      console.error('Failed to fetch posts', err);
-    } finally {
-      setIsLoading(false);
-      setInitialLoad(false);
-    }
+    getPosts()
+      .then(setPosts)
+      .catch(console.error)
+      .finally(() => setIsLoading(false));
   };
 
   // Initial load or pagination
   useEffect(() => {
     fetchPosts();
-  }, [page]);
 
-  // Handle post creation or update -> simple full refresh for now
-  // (In a perfect world we would prepend/update the list locally)
-  const handleRefresh = useCallback(() => {
-    setPage(0);
-    setHasMore(true);
-    fetchPosts(true);
+    // Poll for updates (AI tags/summaries)
+    const interval = setInterval(() => {
+      fetchPosts(); // Simple re-fetch for now
+    }, 5000);
+
+    return () => clearInterval(interval);
   }, []);
 
   return (
@@ -91,7 +76,13 @@ export const FeedPage = () => {
           placeholder="What knowledge would you like to share today?"
         />
 
-        {posts.length > 0 ? (
+        {isLoading ? (
+          <div className="flex flex-col gap-6">
+            {[...Array(3)].map((_, i) => (
+              <PostSkeleton key={i} />
+            ))}
+          </div>
+        ) : posts.length > 0 ? (
           <div className="flex flex-col gap-6 animate-in fade-in duration-1000">
             {posts.map((post, index) => {
               if (index === posts.length - 1) {
