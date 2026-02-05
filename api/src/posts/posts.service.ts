@@ -20,12 +20,20 @@ export class PostsService {
     return this.createWithImage(createPostDto);
   }
 
-  async findAll(): Promise<Post[]> {
-    return this.postModel
+  async findAll(
+    limit = 10,
+    skip = 0,
+  ): Promise<{ posts: Post[]; total: number }> {
+    const total = await this.postModel.countDocuments();
+    const posts = await this.postModel
       .find()
       .populate('authorId', 'name profileImageUrl')
       .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
       .exec();
+
+    return { posts, total };
   }
 
   async createWithImage(
