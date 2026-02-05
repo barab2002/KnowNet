@@ -29,9 +29,11 @@ export const Layout = () => {
             <NavLink
               to="/user-profile"
               className="w-10 h-10 rounded-full border-2 border-primary overflow-hidden hover:ring-2 hover:ring-primary/50 transition-all cursor-pointer"
+              title={user?.name || 'Profile'}
+              aria-label={user?.name ? `${user.name} profile` : 'Profile'}
             >
               <img
-                alt="Profile"
+                alt={user?.name || 'Profile'}
                 className="w-full h-full object-cover"
                 src={user?.profileImageUrl || defaultAvatar}
               />
