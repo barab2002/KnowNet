@@ -7,6 +7,7 @@ import {
   summarizePost,
   deletePost,
 } from '../api/posts';
+import { getUserProfile } from '../api/users';
 import { useAuth } from '../contexts/AuthContext';
 import { Modal } from './Modal';
 
@@ -41,12 +42,42 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onUpdate }) => {
   const authorImage =
     typeof post.authorId === 'object' ? post.authorId?.profileImageUrl : null;
 
+  const [fetchedAuthor, setFetchedAuthor] = React.useState<{
+    _id?: string;
+    name?: string;
+    profileImageUrl?: string;
+  } | null>(null);
+
   // Fallback to current user if ID matches (for optimistic updates or legacy)
   const displayName =
-    authorName || (authorIdStr === currentUserId ? user?.name : 'KnowNet User');
+    authorName ||
+    (authorIdStr === currentUserId ? user?.name : fetchedAuthor?.name) ||
+    'KnowNet User';
   const displayImage =
     authorImage ||
-    (authorIdStr === currentUserId ? user?.profileImageUrl : null);
+    (authorIdStr === currentUserId ? user?.profileImageUrl : fetchedAuthor?.profileImageUrl) ||
+    null;
+
+  // If author image not present and authorId is a string, fetch that user's profile
+  React.useEffect(() => {
+    let mounted = true;
+    const shouldFetch = !authorImage && authorIdStr && authorIdStr !== currentUserId;
+    if (!shouldFetch) return;
+
+    (async () => {
+      try {
+        const u = await getUserProfile(authorIdStr!);
+        if (mounted) setFetchedAuthor(u);
+      } catch (err) {
+        // ignore fetch errors; we'll show placeholder
+        console.debug('Failed to fetch author profile', err);
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
+  }, [authorImage, authorIdStr, currentUserId]);
 
   const isLiked = post.likes.includes(currentUserId);
   const isSaved = post.savedBy.includes(currentUserId);
