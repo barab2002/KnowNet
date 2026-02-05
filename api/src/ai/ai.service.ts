@@ -23,15 +23,11 @@ export class AiService {
     accessToken?: string,
   ): Promise<string> {
     // 1. If Access Token is provided, try to use it with REST API (User Quota)
-    // 1. Log the context (User Quota not used to avoid scope verification issues)
     if (accessToken) {
       this.logger.log(
         `[AiService] Generating summary on behalf of authenticated user (Token available)`,
       );
-    } else {
-      this.logger.log(
-        `[AiService] Generating summary for anonymous/system request`,
-      );
+      // Implementation for user-quota context would go here if needed
     }
 
     // 2. Fallback to Server API Key
@@ -45,9 +41,10 @@ export class AiService {
         `Generating summary for content length: ${content.length} (Server Key)`,
       );
       const model = this.genAI.getGenerativeModel({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-1.5-flash',
       });
-      const prompt = `You are a helpful assistant. Please provide a concise, one-sentence summary of the following content: ${content}`;
+      // Improved prompt for better summaries
+      const prompt = `You are an expert content curator. Please provide a compelling, concise summary (max 2 sentences) of the following content. Capture the main idea and key insight. Content: ${content}`;
 
       const result = await model.generateContent(prompt);
       const generatedText = result.response.text();
@@ -56,15 +53,40 @@ export class AiService {
         throw new Error('Gemini returned an empty response');
       }
 
-      this.logger.log('Summary generated successfully');
-      return generatedText;
+      return generatedText.trim();
     } catch (error) {
       this.logger.error('Failed to generate summary with Gemini', error);
-      if (error instanceof Error) {
-        this.logger.error(`Error details: ${error.message}`);
-        throw new Error(`AI Error: ${error.message}`);
-      }
-      throw new Error('AI Error: Unknown failure');
+      throw error;
+    }
+  }
+
+  async generateTags(content: string): Promise<string[]> {
+    if (!this.genAI) {
+      return ['General', 'Community']; // Fallback
+    }
+
+    try {
+      const model = this.genAI.getGenerativeModel({
+        model: 'gemini-1.5-flash',
+      });
+      const prompt = `Analyze the following content and generate 3-5 relevant, specific tags or keywords. 
+      Focus on the main topics, technologies, or concepts discussed.
+      Return ONLY a comma-separated list of tags (e.g., "React, Frontend, Web Development"). 
+      Do not include explanations or hashtags.
+      Content: "${content}"`;
+
+      const result = await model.generateContent(prompt);
+      const generatedText = result.response.text();
+
+      if (!generatedText) return [];
+
+      return generatedText
+        .split(',')
+        .map((tag) => tag.trim())
+        .filter((tag) => tag.length > 0);
+    } catch (error) {
+      this.logger.error('Failed to generate tags with Gemini', error);
+      return [];
     }
   }
 }
