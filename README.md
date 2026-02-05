@@ -1,96 +1,168 @@
 # KnowNet
 
-<a alt="Nx logo" href="https://nx.dev" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/nrwl/nx/master/images/nx-logo.png" width="45"></a>
+An academic knowledge-sharing platform where students and scholars create posts, interact through likes and comments, and leverage AI-powered summarization.
 
-✨ Your new, shiny [Nx workspace](https://nx.dev) is ready ✨.
+Built with **React 19**, **NestJS**, **MongoDB**, and **Google Gemini AI**.
 
-[Learn more about this workspace setup and its capabilities](https://nx.dev/getting-started/intro#learn-nx?utm_source=nx_project&amp;utm_medium=readme&amp;utm_campaign=nx_projects) or run `npx nx graph` to visually explore what was created. Now, let's get you up to speed!
+---
 
-## Run tasks
+## Features
 
-To run tasks with Nx use:
+- **Knowledge Posts** -- Create and share posts with text and images. Supports hashtag extraction and full-text search.
+- **AI Summarization** -- One-click post summaries powered by Google Gemini 2.5 Flash.
+- **Smart Tagging** -- User-defined `#hashtags` are extracted automatically. When none are provided, AI generates fallback tags.
+- **Social Interactions** -- Like, save, and comment on posts.
+- **User Profiles** -- Profile pages with bio, major, graduation year, profile image upload, and activity stats (posts, likes received, AI summaries generated).
+- **Authentication** -- Email/password registration and Google OAuth 2.0 with JWT-based sessions.
+- **Dark Mode** -- Full dark theme support.
+- **Swagger API Docs** -- Auto-generated API documentation at `/api/docs`.
 
-```sh
-npx nx <target> <project-name>
+---
+
+## Tech Stack
+
+| Layer      | Technology                                      |
+| ---------- | ----------------------------------------------- |
+| Frontend   | React 19, Vite, Tailwind CSS, React Router DOM  |
+| Backend    | NestJS 11, Passport (JWT + Google OAuth), Multer |
+| Database   | MongoDB (Mongoose ODM)                          |
+| AI         | Google Generative AI (Gemini 2.5 Flash)         |
+| Monorepo   | Nx                                              |
+| Deployment | Docker, Docker Compose, Nginx                   |
+
+---
+
+## Project Structure
+
+```
+KnowNet/
+├── api/                    # NestJS backend
+│   └── src/
+│       ├── auth/           # Google OAuth & JWT authentication
+│       ├── posts/          # Posts CRUD, likes, comments, search
+│       ├── users/          # User profiles & stats
+│       ├── ai/             # Gemini AI integration
+│       └── main.ts         # Entry point & Swagger setup
+├── client/                 # React frontend
+│   └── src/
+│       ├── features/       # Page components (feed, profile, search, etc.)
+│       ├── components/     # Reusable UI components
+│       ├── api/            # Axios API clients
+│       ├── contexts/       # Auth context (React Context API)
+│       └── theme/          # Dark mode provider
+├── docker-compose.yml      # MongoDB + API + Client containers
+├── Dockerfile              # API container
+├── Dockerfile.client       # Client container (Nginx)
+└── nginx.conf              # Production Nginx config
 ```
 
-For example:
+---
 
-```sh
-npx nx build myproject
+## Getting Started
+
+### Prerequisites
+
+- **Node.js** 18.12+
+- **MongoDB** (local install or Docker)
+- **Gemini API key** (for AI features) -- [Get one here](https://aistudio.google.com/apikey)
+- **Google OAuth credentials** (optional, for Google login)
+
+### 1. Clone and install
+
+```bash
+git clone https://github.com/barab2002/KnowNet.git
+cd KnowNet
+npm install
 ```
 
-These targets are either [inferred automatically](https://nx.dev/concepts/inferred-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) or defined in the `project.json` or `package.json` files.
+### 2. Configure environment
 
-[More about running tasks in the docs &raquo;](https://nx.dev/features/run-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+Create a `.env` file in the project root:
 
-## Add new projects
-
-While you could add new projects to your workspace manually, you might want to leverage [Nx plugins](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) and their [code generation](https://nx.dev/features/generate-code?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) feature.
-
-To install a new plugin you can use the `nx add` command. Here's an example of adding the React plugin:
-```sh
-npx nx add @nx/react
+```env
+GEMINI_API_KEY=your_gemini_api_key
+MONGO_URI=mongodb://localhost:27017/knownet
+PORT=3000
+FRONTEND_URL=http://localhost:4200
 ```
 
-Use the plugin's generator to create new projects. For example, to create a new React app or library:
+### 3. Run with Docker (recommended)
 
-```sh
-# Generate an app
-npx nx g @nx/react:app demo
-
-# Generate a library
-npx nx g @nx/react:lib some-lib
+```bash
+docker-compose up --build
 ```
 
-You can use `npx nx list` to get a list of installed plugins. Then, run `npx nx list <plugin-name>` to learn about more specific capabilities of a particular plugin. Alternatively, [install Nx Console](https://nx.dev/getting-started/editor-setup?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) to browse plugins and generators in your IDE.
+This starts MongoDB, the API server, and the client. Access the app at **http://localhost**.
 
-[Learn more about Nx plugins &raquo;](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) | [Browse the plugin registry &raquo;](https://nx.dev/plugin-registry?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+### 4. Or run locally
 
-## Set up CI!
+Start the backend and frontend in separate terminals:
 
-### Step 1
+```bash
+# Terminal 1 -- API (with hot-reload)
+npm run dev:api
 
-To connect to Nx Cloud, run the following command:
-
-```sh
-npx nx connect
+# Terminal 2 -- Client (Vite dev server)
+npm start
 ```
 
-Connecting to Nx Cloud ensures a [fast and scalable CI](https://nx.dev/ci/intro/why-nx-cloud?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) pipeline. It includes features such as:
+- Frontend: **http://localhost:4200**
+- API: **http://localhost:3000/api**
+- Swagger docs: **http://localhost:3000/api/docs**
 
-- [Remote caching](https://nx.dev/ci/features/remote-cache?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Task distribution across multiple machines](https://nx.dev/ci/features/distribute-task-execution?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Automated e2e test splitting](https://nx.dev/ci/features/split-e2e-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Task flakiness detection and rerunning](https://nx.dev/ci/features/flaky-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+Or run both at once:
 
-### Step 2
-
-Use the following command to configure a CI workflow for your workspace:
-
-```sh
-npx nx g ci-workflow
+```bash
+npm run dev
 ```
 
-[Learn more about Nx on CI](https://nx.dev/ci/intro/ci-with-nx#ready-get-started-with-your-provider?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+---
 
-## Install Nx Console
+## API Endpoints
 
-Nx Console is an editor extension that enriches your developer experience. It lets you run tasks, generate code, and improves code autocompletion in your IDE. It is available for VSCode and IntelliJ.
+### Auth
+| Method | Endpoint                    | Description              |
+| ------ | --------------------------- | ------------------------ |
+| GET    | `/api/auth/google`          | Start Google OAuth flow  |
+| GET    | `/api/auth/google/redirect` | Google OAuth callback    |
+| GET    | `/api/auth/profile`         | Get current user profile |
 
-[Install Nx Console &raquo;](https://nx.dev/getting-started/editor-setup?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+### Posts
+| Method | Endpoint                             | Description              |
+| ------ | ------------------------------------ | ------------------------ |
+| POST   | `/api/posts`                         | Create a post            |
+| GET    | `/api/posts`                         | Get all posts            |
+| DELETE | `/api/posts/:id`                     | Delete a post            |
+| POST   | `/api/posts/:id/like`                | Toggle like              |
+| POST   | `/api/posts/:id/save`                | Toggle save              |
+| POST   | `/api/posts/:id/comment`             | Add a comment            |
+| POST   | `/api/posts/:id/summarize`           | Generate AI summary      |
+| GET    | `/api/posts/search?q=query`          | Search posts             |
+| GET    | `/api/posts/user/:userId`            | Get user's posts         |
+| GET    | `/api/posts/user/:userId/total-likes`| Get total likes received |
 
-## Useful links
+### Users
+| Method | Endpoint                            | Description            |
+| ------ | ----------------------------------- | ---------------------- |
+| GET    | `/api/users/:userId`                | Get user profile       |
+| POST   | `/api/users`                        | Create/sync user       |
+| PUT    | `/api/users/:userId`                | Update profile         |
+| POST   | `/api/users/:userId/profile-image`  | Upload profile image   |
 
-Learn more:
+---
 
-- [Learn more about this workspace setup](https://nx.dev/getting-started/intro#learn-nx?utm_source=nx_project&amp;utm_medium=readme&amp;utm_campaign=nx_projects)
-- [Learn about Nx on CI](https://nx.dev/ci/intro/ci-with-nx?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Releasing Packages with Nx release](https://nx.dev/features/manage-releases?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [What are Nx plugins?](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+## Scripts
 
-And join the Nx community:
-- [Discord](https://go.nx.dev/community)
-- [Follow us on X](https://twitter.com/nxdevtools) or [LinkedIn](https://www.linkedin.com/company/nrwl)
-- [Our Youtube channel](https://www.youtube.com/@nxdevtools)
-- [Our blog](https://nx.dev/blog?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+| Command           | Description                             |
+| ----------------- | --------------------------------------- |
+| `npm start`       | Start frontend dev server (port 4200)   |
+| `npm run start:api` | Start backend dev server (port 3000)  |
+| `npm run dev:api` | Backend with webpack watch + nodemon    |
+| `npm run dev`     | Start frontend and backend together     |
+| `npm run build`   | Production build                        |
+
+---
+
+## License
+
+MIT
