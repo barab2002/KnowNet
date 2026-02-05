@@ -6,5 +6,20 @@
   "implicitDependencies": ["client"],
   "tags": [],
   "// targets": "to see all targets run: nx show project client-e2e --web",
-  "targets": {}
+  "targets": {
+    "e2e": {
+      "executor": "@nx/cypress:cypress",
+      "options": {
+        "cypressConfig": "client-e2e/cypress.config.ts",
+        "testingType": "e2e"
+      }
+    },
+    "open-cypress": {
+      "executor": "@nx/cypress:open",
+      "options": {
+        "cypressConfig": "client-e2e/cypress.config.ts",
+        "testingType": "e2e"
+      }
+    }
+  }
 }

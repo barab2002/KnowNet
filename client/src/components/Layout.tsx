@@ -14,6 +14,11 @@ export const Layout = () => {
   const defaultAvatar =
     'https://lh3.googleusercontent.com/aida-public/AB6AXuCvtexDhPhar8YHNlSTSnW4u-Cr6-wLTamZ6XqrJcCGbnv8HsimarRRtRyBOXOivrORYRp5w4dPCWMc7KGnm8X9k3kPAXU9d6G4gN-ayhLHw5yHnG5Mh4wYJRpprIH9Rm8Q56nNjDmxPmfrhn5OkejcNpGBpQHyRZNnCYuEozb0BKzo27GFFl5ZPMAKFtOY3Kybd8KWCrsbCGJYc977RMJ4LdWMuB3NpS4jMZy4Vl058nKZE5lgpsUsafPMMG57ba5uOyNwIkIKMg';
 
+  const displayName = user?.name || 'Profile';
+  const displayImage = user?.profileImageUrl?.trim()
+    ? user.profileImageUrl
+    : defaultAvatar;
+
   return (
     <div className="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display min-h-screen flex flex-col">
       {/* Top Navigation Bar */}
@@ -29,13 +34,15 @@ export const Layout = () => {
             <NavLink
               to="/user-profile"
               className="w-10 h-10 rounded-full border-2 border-primary overflow-hidden hover:ring-2 hover:ring-primary/50 transition-all cursor-pointer"
-              title={user?.name || 'Profile'}
-              aria-label={user?.name ? `${user.name} profile` : 'Profile'}
+              title={displayName}
+              aria-label={displayName ? `${displayName} profile` : 'Profile'}
+              data-testid="navbar-profile-link"
             >
               <img
-                alt={user?.name || 'Profile'}
+                alt={displayName}
                 className="w-full h-full object-cover"
-                src={user?.profileImageUrl || defaultAvatar}
+                src={displayImage}
+                data-testid="navbar-avatar-img"
               />
             </NavLink>
           </div>
