@@ -125,7 +125,11 @@ export const Layout = () => {
             isActive ? 'text-primary' : 'text-slate-400'
           }
         >
-          <span className="material-icons-round">person</span>
+          <img
+            src={user?.profileImageUrl || defaultAvatar}
+            alt={user?.name || 'Profile'}
+            className="w-7 h-7 rounded-full object-cover"
+          />
         </NavLink>
       </nav>
     </div>
