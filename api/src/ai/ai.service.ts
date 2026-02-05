@@ -41,7 +41,7 @@ export class AiService {
         `Generating summary for content length: ${content.length} (Server Key)`,
       );
       const model = this.genAI.getGenerativeModel({
-        model: 'gemini-1.5-flash',
+        model: 'gemini-pro',
       });
       // Improved prompt for better summaries
       const prompt = `You are an expert content curator. Please provide a compelling, concise summary (max 2 sentences) of the following content. Capture the main idea and key insight. Content: ${content}`;
@@ -67,7 +67,7 @@ export class AiService {
 
     try {
       const model = this.genAI.getGenerativeModel({
-        model: 'gemini-1.5-flash',
+        model: 'gemini-pro',
       });
       const prompt = `Analyze the following content and generate 3-5 relevant, specific tags or keywords. 
       Focus on the main topics, technologies, or concepts discussed.
