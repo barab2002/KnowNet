@@ -15,10 +15,11 @@
       }
     },
     "open-cypress": {
-      "executor": "@nx/cypress:open",
+      "executor": "@nx/cypress:cypress",
       "options": {
         "cypressConfig": "client-e2e/cypress.config.ts",
-        "testingType": "e2e"
+        "testingType": "e2e",
+        "watch": true
       }
     }
   }
