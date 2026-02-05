@@ -11,6 +11,12 @@ export class Post {
   @Prop({ type: [String], default: [] })
   tags: string[];
 
+  @Prop({ type: [String], default: [] })
+  userTags: string[]; // User-written hashtags
+
+  @Prop({ type: [String], default: [] })
+  aiTags: string[]; // AI-generated or keyword fallback tags
+
   @Prop({ required: false })
   summary?: string;
 

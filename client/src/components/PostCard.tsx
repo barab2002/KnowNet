@@ -195,6 +195,32 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onUpdate }) => {
             </div>
           )}
 
+          {/* Tags Section with User vs AI distinction */}
+          {((post.userTags && post.userTags.length > 0) ||
+            (post.aiTags && post.aiTags.length > 0)) && (
+            <div className="flex flex-wrap gap-2 mb-4">
+              {post.userTags?.map((tag, idx) => (
+                <span
+                  key={`user-${idx}`}
+                  className="text-xs font-semibold text-primary bg-primary/10 px-2 py-1 rounded"
+                >
+                  #{tag}
+                </span>
+              ))}
+              {post.aiTags?.map((tag, idx) => (
+                <span
+                  key={`ai-${idx}`}
+                  className="text-xs font-medium text-slate-500 bg-slate-100 dark:bg-slate-700 dark:text-slate-300 px-2 py-1 rounded flex items-center gap-1"
+                >
+                  <span className="material-symbols-outlined text-[10px]">
+                    cognition_2
+                  </span>
+                  #{tag}
+                </span>
+              ))}
+            </div>
+          )}
+
           <div className="flex items-center gap-6 pt-4 border-t border-slate-100 dark:border-slate-800">
             <button
               onClick={handleLike}
