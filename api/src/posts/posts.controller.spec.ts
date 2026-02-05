@@ -54,6 +54,11 @@ describe('PostsController', () => {
       expect(await controller.findAll(10, 0)).toBe(result);
       expect(mockPostsService.findAll).toHaveBeenCalledWith(10, 0);
     });
+
+    it('should throw if service fails', async () => {
+      mockPostsService.findAll.mockRejectedValue(new Error('Fail'));
+      await expect(controller.findAll(10, 0)).rejects.toThrow('Fail');
+    });
   });
 
   describe('create', () => {
@@ -84,6 +89,13 @@ describe('PostsController', () => {
       expect(await controller.create(dto, req, image)).toBe(result);
       expect(mockPostsService.createWithImage).toHaveBeenCalled();
     });
+
+    it('should propagate service error', async () => {
+      const dto: CreatePostDto = { content: 'test', authorId: 'user1' };
+      const req = { user: { _id: 'user1' } };
+      mockPostsService.createWithImage.mockRejectedValue(new Error('Fail'));
+      await expect(controller.create(dto, req)).rejects.toThrow('Fail');
+    });
   });
 
   describe('getTags', () => {
@@ -91,6 +103,11 @@ describe('PostsController', () => {
       const tags = ['tag1', 'tag2'];
       mockPostsService.getUniqueTags.mockResolvedValue(tags);
       expect(await controller.getTags()).toBe(tags);
+    });
+
+    it('should fail if service fails', async () => {
+      mockPostsService.getUniqueTags.mockRejectedValue(new Error('Fail'));
+      await expect(controller.getTags()).rejects.toThrow('Fail');
     });
   });
 
@@ -105,12 +122,22 @@ describe('PostsController', () => {
       expect(await controller.search('')).toEqual([]);
       expect(mockPostsService.search).not.toHaveBeenCalled();
     });
+
+    it('should fail if service fails', async () => {
+      mockPostsService.search.mockRejectedValue(new Error('Fail'));
+      await expect(controller.search('q')).rejects.toThrow('Fail');
+    });
   });
 
   describe('summarize', () => {
     it('should summarize post', async () => {
       mockPostsService.summarizePost.mockResolvedValue('summary');
       expect(await controller.summarize('1')).toBe('summary');
+    });
+
+    it('should fail on service error', async () => {
+      mockPostsService.summarizePost.mockRejectedValue(new Error('Fail'));
+      await expect(controller.summarize('1')).rejects.toThrow('Fail');
     });
   });
 
@@ -120,6 +147,11 @@ describe('PostsController', () => {
       mockPostsService.toggleLike.mockResolvedValue(result);
       expect(await controller.toggleLike('1', 'user1')).toBe(result);
     });
+
+    it('should fail if service throws', async () => {
+      mockPostsService.toggleLike.mockRejectedValue(new Error('Fail'));
+      await expect(controller.toggleLike('1', 'u')).rejects.toThrow('Fail');
+    });
   });
 
   describe('toggleSave', () => {
@@ -127,6 +159,11 @@ describe('PostsController', () => {
       const result = { saved: true };
       mockPostsService.toggleSave.mockResolvedValue(result);
       expect(await controller.toggleSave('1', 'user1')).toBe(result);
+    });
+
+    it('should fail if service throws', async () => {
+      mockPostsService.toggleSave.mockRejectedValue(new Error('Fail'));
+      await expect(controller.toggleSave('1', 'u')).rejects.toThrow('Fail');
     });
   });
 
@@ -136,6 +173,13 @@ describe('PostsController', () => {
       mockPostsService.addComment.mockResolvedValue(result);
       expect(await controller.addComment('1', 'user1', 'nice')).toBe(result);
     });
+
+    it('should fail if service throws', async () => {
+      mockPostsService.addComment.mockRejectedValue(new Error('Fail'));
+      await expect(controller.addComment('1', 'u', 'c')).rejects.toThrow(
+        'Fail',
+      );
+    });
   });
 
   describe('getUserPosts', () => {
@@ -143,6 +187,11 @@ describe('PostsController', () => {
       const result = [];
       mockPostsService.getPostsByUser.mockResolvedValue(result);
       expect(await controller.getUserPosts('user1')).toBe(result);
+    });
+
+    it('should propagate error', async () => {
+      mockPostsService.getPostsByUser.mockRejectedValue(new Error('Fail'));
+      await expect(controller.getUserPosts('u')).rejects.toThrow('Fail');
     });
   });
 
@@ -152,6 +201,11 @@ describe('PostsController', () => {
       mockPostsService.getLikedPosts.mockResolvedValue(result);
       expect(await controller.getLikedPosts('user1')).toBe(result);
     });
+
+    it('should propagate error', async () => {
+      mockPostsService.getLikedPosts.mockRejectedValue(new Error('Fail'));
+      await expect(controller.getLikedPosts('u')).rejects.toThrow('Fail');
+    });
   });
 
   describe('getSavedPosts', () => {
@@ -159,6 +213,11 @@ describe('PostsController', () => {
       const result = [];
       mockPostsService.getSavedPosts.mockResolvedValue(result);
       expect(await controller.getSavedPosts('user1')).toBe(result);
+    });
+
+    it('should propagate error', async () => {
+      mockPostsService.getSavedPosts.mockRejectedValue(new Error('Fail'));
+      await expect(controller.getSavedPosts('u')).rejects.toThrow('Fail');
     });
   });
 
@@ -169,6 +228,13 @@ describe('PostsController', () => {
         totalLikes: 10,
       });
     });
+
+    it('should propagate error', async () => {
+      mockPostsService.getTotalLikesForUser.mockRejectedValue(
+        new Error('Fail'),
+      );
+      await expect(controller.getTotalLikes('u')).rejects.toThrow('Fail');
+    });
   });
 
   describe('delete', () => {
@@ -177,6 +243,12 @@ describe('PostsController', () => {
       mockPostsService.delete.mockResolvedValue({ deleted: true });
       expect(await controller.delete('1', req)).toEqual({ deleted: true });
       expect(mockPostsService.delete).toHaveBeenCalledWith('1', 'user1');
+    });
+
+    it('should propagate error', async () => {
+      const req = { user: { _id: 'user1' } };
+      mockPostsService.delete.mockRejectedValue(new Error('Fail'));
+      await expect(controller.delete('1', req)).rejects.toThrow('Fail');
     });
   });
 });
