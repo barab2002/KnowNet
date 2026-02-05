@@ -336,8 +336,13 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onUpdate }) => {
               <div className="space-y-3 mb-4 max-h-60 overflow-y-auto">
                 {post.comments.map((comment, idx) => {
                   const author = commentAuthors[comment.userId];
-                  const name = author?.name || `User ${comment.userId.slice(0, 4)}`;
-                  const img = author?.profileImageUrl || defaultAvatar;
+                  const isCurrentUserComment = comment.userId === currentUserId;
+                  const name = isCurrentUserComment
+                    ? user?.name || `User ${comment.userId.slice(0, 4)}`
+                    : author?.name || `User ${comment.userId.slice(0, 4)}`;
+                  const img = isCurrentUserComment
+                    ? user?.profileImageUrl || defaultAvatar
+                    : author?.profileImageUrl || defaultAvatar;
                   return (
                     <div
                       key={idx}

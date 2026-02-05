@@ -1,5 +1,9 @@
 import React, { useState } from 'react';
 import { searchPosts, Post } from '../../api/posts';
+import { useAuth } from '../../contexts/AuthContext';
+
+const defaultAvatar =
+  'https://lh3.googleusercontent.com/aida-public/AB6AXuCvtexDhPhar8YHNlSTSnW4u-Cr6-wLTamZ6XqrJcCGbnv8HsimarRRtRyBOXOivrORYRp5w4dPCWMc7KGnm8X9k3kPAXU9d6G4gN-ayhLHw5yHnG5Mh4wYJRpprIH9Rm8Q56nNjDmxPmfrhn5OkejcNpGBpQHyRZNnCYuEozb0BKzo27GFFl5ZPMAKFtOY3Kybd8KWCrsbCGJYc977RMJ4LdWMuB3NpS4jMZy4Vl058nKZE5lgpsUsafPMMG57ba5uOyNwIkIKMg';
 
 export const SemanticSearchPage = () => {
   const [query, setQuery] = useState('');
@@ -96,7 +100,16 @@ export const SemanticSearchPage = () => {
               </div>
             </div>
 
-            {results.map((post) => (
+            {results.map((post) => {
+              const { user } = useAuth();
+              const currentUserId = user?._id || '';
+              const authorIdStr = typeof post.authorId === 'object' ? post.authorId._id : post.authorId;
+              const authorImage =
+                typeof post.authorId === 'object' ? post.authorId?.profileImageUrl : null;
+              const displayImage =
+                authorImage || (authorIdStr === currentUserId ? user?.profileImageUrl : defaultAvatar);
+
+              return (
               <div
                 key={post._id}
                 className="bg-white dark:bg-[#1a2632] rounded-xl p-5 border border-slate-200 dark:border-[#233648] hover:border-primary/50 transition-all group shadow-sm"
@@ -104,23 +117,14 @@ export const SemanticSearchPage = () => {
                 <div className="flex justify-between items-start mb-3">
                   <div className="flex items-center gap-3">
                     <div className="size-10 rounded-full bg-slate-200 overflow-hidden flex items-center justify-center text-slate-500">
-                      {typeof post.authorId === 'object' &&
-                      post.authorId?.profileImageUrl ? (
-                        <img
-                          src={post.authorId.profileImageUrl}
-                          alt="Author avatar"
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <span className="material-symbols-outlined">
-                          person
-                        </span>
-                      )}
+                      <img src={displayImage} alt="Author avatar" className="w-full h-full object-cover" />
                     </div>
                     <div>
                       <p className="font-semibold text-sm">
                         {typeof post.authorId === 'object'
                           ? post.authorId?.name
+                          : authorIdStr === currentUserId
+                          ? user?.name
                           : 'KnowNet User'}
                       </p>
                       <p className="text-xs text-slate-500 dark:text-[#92adc9]">
@@ -186,7 +190,8 @@ export const SemanticSearchPage = () => {
                   </button>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
