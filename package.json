@@ -10,14 +10,15 @@
     "registry": "https://npm.pkg.github.com"
   },
   "scripts": {
-    "dev": "docker compose up -d && cross-env NODE_ENV=development nx run-many --targets=serve --all",
+    "start": "docker compose up --build",
+    "dev": "docker compose up --build",
     "dev:down": "docker compose down",
     "dev:api": "cross-env NODE_ENV=development npx nx serve api",
     "dev:client": "nx serve client",
 
     "prod:build": "nx run-many --targets=build --all",
-    "prod:start": "pm2 start ecosystem.config.js",
-    "prod:stop": "pm2 stop ecosystem.config.js",
+    "prod:start": "docker compose -f docker-compose.prod.yml up -d && pm2 start ecosystem.config.js",
+    "prod:stop": "pm2 stop ecosystem.config.js && docker compose -f docker-compose.prod.yml down",
     "prod:restart": "pm2 restart ecosystem.config.js",
     "prod:logs": "pm2 logs",
     "prod:status": "pm2 status",
