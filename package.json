@@ -1,7 +1,14 @@
 {
-  "name": "@know-net/source",
+  "name": "@barab2002/knownet",
   "version": "0.0.0",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/barab2002/KnowNet.git"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
   "scripts": {
     "dev": "docker compose up -d && cross-env NODE_ENV=development nx run-many --targets=serve --all",
     "dev:down": "docker compose down",
@@ -22,7 +29,6 @@
     "e2e:client:smoke": "cross-env NX_DAEMON=false NX_OUTPUT_STYLE=static CI=1 nx e2e client-e2e --browser electron --skip-nx-cache --spec client-e2e/src/e2e/app.cy.ts",
     "e2e:client:open": "nx run client-e2e:open-cypress"
   },
-  "private": true,
   "devDependencies": {
     "@nestjs/schematics": "^11.0.0",
     "@nestjs/testing": "^11.0.0",
