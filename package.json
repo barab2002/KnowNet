@@ -6,9 +6,6 @@
     "type": "git",
     "url": "https://github.com/barab2002/KnowNet.git"
   },
-  "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
-  },
   "scripts": {
     "start": "docker compose up --build",
     "dev": "docker compose up --build",
