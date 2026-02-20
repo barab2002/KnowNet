@@ -3,12 +3,18 @@
  * This is only a minimal backend to get started.
  */
 
-import 'dotenv/config'; // Ensure env vars are loaded
+import { config } from 'dotenv';
+import { join } from 'path';
+
+const envFile = process.env.NODE_ENV === 'production'
+  ? '.env.production'
+  : '.env.development';
+config({ path: join(__dirname, '..', '..', envFile) });
+
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { join } from 'path';
 import { AppModule } from './app/app.module';
 
 async function bootstrap() {

@@ -1,3 +1,18 @@
+const { readFileSync, existsSync } = require('fs');
+const { join } = require('path');
+
+// Load .env file
+const envFile = join(__dirname, '.env.production');
+const envVars = {};
+if (existsSync(envFile)) {
+  readFileSync(envFile, 'utf-8').split('\n').forEach((line) => {
+    const [key, ...vals] = line.split('=');
+    if (key && !key.startsWith('#') && vals.length) {
+      envVars[key.trim()] = vals.join('=').trim().replace(/^["']|["']$/g, '');
+    }
+  });
+}
+
 module.exports = {
   apps: [
     {
@@ -11,9 +26,8 @@ module.exports = {
       env: {
         NODE_ENV: 'production',
         PORT: 3000,
+        ...envVars,
       },
-      // Load .env file variables
-      env_file: '.env',
       uid: 'barab',
       // Logging
       log_date_format: 'YYYY-MM-DD HH:mm:ss',

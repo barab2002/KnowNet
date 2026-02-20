@@ -84,7 +84,7 @@ KnowNet/
 ├── client-e2e/                 # Cypress E2E tests
 ├── api-e2e/                    # Backend integration tests
 │
-├── docker-compose.yml          # MongoDB + API + Client containers
+├── docker-compose.yml          # Dev: MongoDB + Mongo Express containers
 ├── Dockerfile                  # API container
 ├── Dockerfile.client           # Client container (Nginx)
 └── nginx.conf                  # Reverse proxy config
@@ -137,43 +137,33 @@ MONGO_URI=mongodb://localhost:27017/knownet
 PORT=3000
 ```
 
-### 3. Run with Docker (recommended)
+### 3. Start development
 
 ```bash
-docker-compose up --build
+npm run dev
 ```
 
-This starts four services:
+This starts MongoDB + Mongo Express via Docker and then runs the API and client locally with hot-reload:
 
 | Service | URL |
 | --- | --- |
-| Client (Nginx) | http://localhost |
+| Frontend (Vite) | http://localhost:4200 |
 | API (NestJS) | http://localhost:3000/api |
 | Swagger Docs | http://localhost:3000/api/docs |
 | Mongo Express | http://localhost:8081 |
 
-### 4. Or run locally
+To stop the MongoDB containers:
 
 ```bash
-# Start both frontend and backend together
-npm run dev
+npm run dev:down
 ```
 
-Or in separate terminals for independent control:
+You can also run services individually (requires MongoDB running separately):
 
 ```bash
-# Terminal 1 -- backend with hot-reload
-npm run dev:api
-
-# Terminal 2 -- frontend (Vite dev server)
-npm start
+npm run dev:api      # Backend only with hot-reload
+npm run dev:client   # Frontend only (Vite dev server)
 ```
-
-| Service | URL |
-| --- | --- |
-| Frontend | http://localhost:4200 |
-| API | http://localhost:3000/api |
-| Swagger Docs | http://localhost:3000/api/docs |
 
 ---
 
@@ -289,14 +279,14 @@ E2E test suites:
 
 ---
 
-## Running on a VM with PM2
+## Production Deployment (PM2)
 
-Use PM2 to run KnowNet as a persistent background service on your server (no Docker needed).
+In production, MongoDB is already running on the VM (port 21771 with authentication). The app runs natively via PM2.
 
 ### Prerequisites
 
 - **Node.js** 18.12+
-- **MongoDB** running on the server
+- **MongoDB** running on the VM (port 21771)
 - **PM2** installed globally: `npm install -g pm2`
 - **serve** installed globally: `npm install -g serve`
 
@@ -311,48 +301,43 @@ npm install
 ### 2. Configure environment
 
 ```bash
-cp .env.example .env
-# Edit .env with your production values (MONGO_URI, GEMINI_API_KEY, etc.)
+cp .env.example .env.production
+# Edit .env.production with your production values (MONGO_URI, GEMINI_API_KEY, etc.)
 ```
 
-Make sure to update `FRONTEND_URL` and `GOOGLE_CALLBACK_URL` to match your server's domain/IP.
+Make sure `MONGO_URI` points to your VM's MongoDB (`mongodb://admin:password@localhost:21771/knownet?authSource=admin`) and update `FRONTEND_URL` and `GOOGLE_CALLBACK_URL` to match your server's domain/IP.
 
-### 3. Build the project
+### 3. Build and start
 
 ```bash
-npm run build:all
+npm run prod:build
+npm run prod:start
 ```
 
-### 4. Start with PM2
-
-```bash
-npm run pm2:start
-```
-
-This starts two processes under the `barab` user:
+This starts two PM2 processes:
 
 | Process | Description | Port |
 | --- | --- | --- |
 | `knownet-api` | NestJS backend | 3000 |
 | `knownet-client` | Static file server (React build) | 4200 |
 
-### 5. Useful PM2 commands
+### 4. Useful commands
 
 ```bash
-npm run pm2:status     # Check process status
-npm run pm2:logs       # View live logs
-npm run pm2:restart    # Restart all processes
-npm run pm2:stop       # Stop all processes
+npm run prod:status     # Check PM2 process status
+npm run prod:logs       # View PM2 live logs
+npm run prod:restart    # Restart PM2 processes
+npm run prod:stop       # Stop all PM2 processes
 ```
 
-### 6. Auto-start on reboot
+### 5. Auto-start on reboot
 
 ```bash
 pm2 startup            # Generate startup script (follow the printed instructions)
 pm2 save               # Save current process list
 ```
 
-### 7. (Optional) Nginx reverse proxy
+### 6. (Optional) Nginx reverse proxy
 
 If you want to serve the client on port 80 and proxy `/api` to the backend, install Nginx and use the included [nginx.conf](nginx.conf) as a reference. Update `proxy_pass` to point to `http://localhost:3000` instead of `http://api:3000`.
 
@@ -362,23 +347,25 @@ If you want to serve the client on port 80 and proxy `/api` to the backend, inst
 
 | Command | Description |
 | --- | --- |
-| `npm start` | Start frontend dev server (port 4200) |
-| `npm run start:api` | Start backend dev server (port 3000) |
-| `npm run dev:api` | Backend with hot-reload (webpack + nodemon) |
-| `npm run dev` | Start frontend and backend together |
-| `npm run build` | Production build |
+| **Dev** | |
+| `npm run dev` | Start MongoDB (Docker) + API + client with hot-reload |
+| `npm run dev:down` | Stop and remove MongoDB containers |
+| `npm run dev:api` | Backend only with hot-reload (no Docker) |
+| `npm run dev:client` | Frontend only via Vite dev server (no Docker) |
+| **Prod (PM2)** | |
+| `npm run prod:build` | Build API + client for production |
+| `npm run prod:start` | Start all services with PM2 |
+| `npm run prod:stop` | Stop all PM2 services |
+| `npm run prod:restart` | Restart PM2 processes |
+| `npm run prod:logs` | View PM2 live logs |
+| `npm run prod:status` | Check PM2 process status |
+| **Testing** | |
 | `npm test` | Run API unit tests |
 | `npm run test:watch` | Unit tests in watch mode |
 | `npm run test:coverage` | Unit test coverage report |
 | `npm run e2e:client` | Run Cypress E2E tests |
 | `npm run e2e:client:smoke` | Run smoke tests only |
 | `npm run e2e:client:open` | Open Cypress interactive UI |
-| `npm run build:all` | Production build (API + client) |
-| `npm run pm2:start` | Start all services with PM2 |
-| `npm run pm2:stop` | Stop all PM2 services |
-| `npm run pm2:restart` | Restart all PM2 services |
-| `npm run pm2:logs` | View PM2 live logs |
-| `npm run pm2:status` | Check PM2 process status |
 
 ---
 
