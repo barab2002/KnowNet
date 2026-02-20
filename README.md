@@ -46,7 +46,7 @@
 | **AI** | Google Generative AI (Gemini 2.5 Flash) |
 | **Testing** | Jest, Cypress, Vitest |
 | **Monorepo** | Nx 22 |
-| **Deployment** | Docker, Docker Compose, Nginx |
+| **Deployment** | Docker, Docker Compose, Nginx, PM2 |
 
 ---
 
@@ -289,6 +289,75 @@ E2E test suites:
 
 ---
 
+## Running on a VM with PM2
+
+Use PM2 to run KnowNet as a persistent background service on your server (no Docker needed).
+
+### Prerequisites
+
+- **Node.js** 18.12+
+- **MongoDB** running on the server
+- **PM2** installed globally: `npm install -g pm2`
+- **serve** installed globally: `npm install -g serve`
+
+### 1. Clone and install
+
+```bash
+git clone https://github.com/barab2002/KnowNet.git
+cd KnowNet
+npm install
+```
+
+### 2. Configure environment
+
+```bash
+cp .env.example .env
+# Edit .env with your production values (MONGO_URI, GEMINI_API_KEY, etc.)
+```
+
+Make sure to update `FRONTEND_URL` and `GOOGLE_CALLBACK_URL` to match your server's domain/IP.
+
+### 3. Build the project
+
+```bash
+npm run build:all
+```
+
+### 4. Start with PM2
+
+```bash
+npm run pm2:start
+```
+
+This starts two processes under the `barab` user:
+
+| Process | Description | Port |
+| --- | --- | --- |
+| `knownet-api` | NestJS backend | 3000 |
+| `knownet-client` | Static file server (React build) | 4200 |
+
+### 5. Useful PM2 commands
+
+```bash
+npm run pm2:status     # Check process status
+npm run pm2:logs       # View live logs
+npm run pm2:restart    # Restart all processes
+npm run pm2:stop       # Stop all processes
+```
+
+### 6. Auto-start on reboot
+
+```bash
+pm2 startup            # Generate startup script (follow the printed instructions)
+pm2 save               # Save current process list
+```
+
+### 7. (Optional) Nginx reverse proxy
+
+If you want to serve the client on port 80 and proxy `/api` to the backend, install Nginx and use the included [nginx.conf](nginx.conf) as a reference. Update `proxy_pass` to point to `http://localhost:3000` instead of `http://api:3000`.
+
+---
+
 ## Scripts
 
 | Command | Description |
@@ -304,6 +373,12 @@ E2E test suites:
 | `npm run e2e:client` | Run Cypress E2E tests |
 | `npm run e2e:client:smoke` | Run smoke tests only |
 | `npm run e2e:client:open` | Open Cypress interactive UI |
+| `npm run build:all` | Production build (API + client) |
+| `npm run pm2:start` | Start all services with PM2 |
+| `npm run pm2:stop` | Stop all PM2 services |
+| `npm run pm2:restart` | Restart all PM2 services |
+| `npm run pm2:logs` | View PM2 live logs |
+| `npm run pm2:status` | Check PM2 process status |
 
 ---
 
