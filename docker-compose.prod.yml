@@ -1,0 +1,26 @@
+services:
+  api:
+    image: ghcr.io/barab2002/knownet-api:latest
+    container_name: knownet-api-prod
+    ports:
+      - "3000:3000"
+    environment:
+      - MONGO_URI=mongodb://admin:bartar20%40CS@node96.cs.colman.ac.il:21771/knownet?authSource=admin
+      - PORT=3000
+      - NODE_ENV=production
+      - JWT_SECRET=${JWT_SECRET}
+      - FRONTEND_URL=${FRONTEND_URL}
+      - GOOGLE_CALLBACK_URL=${GOOGLE_CALLBACK_URL}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+    restart: always
+
+  client:
+    image: ghcr.io/barab2002/knownet-client:latest
+    container_name: knownet-client-prod
+    ports:
+      - "80:80"
+    depends_on:
+      - api
+    restart: always
