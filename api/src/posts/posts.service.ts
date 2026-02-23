@@ -150,7 +150,23 @@ export class PostsService {
     const post = await this.postModel.findById(postId);
     if (!post) throw new Error('Post not found');
 
-    post.comments.push({ userId, content, createdAt: new Date() });
+    let userName: string | undefined;
+    let userProfileImageUrl: string | undefined;
+    try {
+      const user = await this.usersService.findById(userId);
+      userName = user.name;
+      userProfileImageUrl = user.profileImageUrl;
+    } catch (error) {
+      this.logger.warn(`Unable to resolve user for comment: ${userId}`);
+    }
+
+    post.comments.push({
+      userId,
+      userName,
+      userProfileImageUrl,
+      content,
+      createdAt: new Date(),
+    });
     return post.save();
   }
 
