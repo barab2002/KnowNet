@@ -15,6 +15,8 @@ export interface Post {
   savedBy: string[];
   comments: {
     userId: string;
+    userName?: string;
+    userProfileImageUrl?: string;
     content: string;
     createdAt: string;
   }[];
