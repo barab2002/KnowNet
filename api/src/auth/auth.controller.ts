@@ -1,31 +1,29 @@
-import { Controller, Get, Req, Res, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Get,
+  Req,
+  UseGuards,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
-import { Response } from 'express';
+import { FirebaseService } from './firebase.service';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly firebaseService: FirebaseService,
+  ) {}
 
-  @Get('google')
-  @UseGuards(AuthGuard('google'))
-  async googleAuth(@Req() req) {
-    // Guard initiates Google Login
-  }
-
-  @Get('google/redirect')
-  @UseGuards(AuthGuard('google'))
-  async googleAuthRedirect(@Req() req, @Res() res: Response) {
-    // req.user is populated by GoogleStrategy.validate -> AuthService.validateGoogleUser (if we configured it so, actually Strategy returns the google profile object, we need to handle the user creation here or in the strategy)
-    // Actually, usually Strategy return calls done(null, user), that user object is assigned to req.user.
-
-    const user = await this.authService.validateGoogleUser(req.user);
-    const { access_token } = await this.authService.login(user);
-
-    // Redirect to frontend with token
-    // Assuming frontend is running on localhost:4200 (or whatever configured)
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:4200';
-    res.redirect(`${frontendUrl}/login/success?token=${access_token}`);
+  @Post('firebase')
+  async firebaseAuth(@Body() body: { idToken: string }) {
+    if (!body.idToken) throw new UnauthorizedException('No token provided');
+    const decodedToken = await this.firebaseService.verifyIdToken(body.idToken);
+    const user = await this.authService.validateFirebaseUser(decodedToken);
+    return this.authService.login(user);
   }
 
   @Get('profile')

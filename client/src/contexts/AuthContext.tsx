@@ -10,6 +10,7 @@ import {
   login as apiLogin,
   register as apiRegister,
   logout as apiLogout,
+  loginWithGoogle as apiLoginWithGoogle,
   LoginCredentials,
   RegisterData,
   AuthResponse,
@@ -32,6 +33,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (credentials: LoginCredentials) => Promise<void>;
   register: (data: RegisterData) => Promise<void>;
+  loginWithGoogle: () => Promise<void>;
   loginWithToken: (token: string) => Promise<void>;
   logout: () => void;
   updateUser: (updatedUserData: Partial<User>) => void;
@@ -126,6 +128,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     }
   };
 
+  const loginWithGoogle = async () => {
+    try {
+      const response = await apiLoginWithGoogle();
+      saveAuthState(response, true);
+    } catch (error) {
+      console.error('Google login failed:', error);
+      throw error;
+    }
+  };
+
   const loginWithToken = async (token: string) => {
     try {
       // Import getProfile dynamically to avoid circular dependencies if any, or just import at top if fine.
@@ -163,6 +175,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     isLoading,
     login,
     register,
+    loginWithGoogle,
     loginWithToken,
     logout,
     updateUser,

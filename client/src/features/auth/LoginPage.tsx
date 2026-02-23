@@ -4,7 +4,8 @@ import { useAuth } from '../../contexts/AuthContext';
 
 export const LoginPage = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -142,19 +143,36 @@ export const LoginPage = () => {
           </form>
 
           <div className="mt-6">
-            <a
-              href="/api/auth/google"
-              className="flex items-center justify-center w-full py-3 px-6 rounded-lg border border-slate-300 dark:border-[#324d67] bg-white dark:bg-[#0d1419] hover:bg-slate-50 dark:hover:bg-[#192633] transition-colors gap-3 group"
+            <button
+              type="button"
+              onClick={async () => {
+                setGoogleLoading(true);
+                setError('');
+                try {
+                  await loginWithGoogle();
+                  navigate('/');
+                } catch (err) {
+                  setError('Google sign-in failed. Please try again.');
+                } finally {
+                  setGoogleLoading(false);
+                }
+              }}
+              disabled={googleLoading}
+              className="flex items-center justify-center w-full py-3 px-6 rounded-lg border border-slate-300 dark:border-[#324d67] bg-white dark:bg-[#0d1419] hover:bg-slate-50 dark:hover:bg-[#192633] transition-colors gap-3 group disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <img
-                src="https://www.google.com/favicon.ico"
-                alt="Google"
-                className="w-5 h-5 opacity-70 group-hover:opacity-100 transition-opacity"
-              />
+              {googleLoading ? (
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-slate-700 dark:border-slate-200"></div>
+              ) : (
+                <img
+                  src="https://www.google.com/favicon.ico"
+                  alt="Google"
+                  className="w-5 h-5 opacity-70 group-hover:opacity-100 transition-opacity"
+                />
+              )}
               <span className="font-bold text-sm text-slate-700 dark:text-slate-200">
                 Sign in with Google
               </span>
-            </a>
+            </button>
           </div>
 
           {/* Divider */}
