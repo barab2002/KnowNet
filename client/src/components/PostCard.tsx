@@ -13,9 +13,11 @@ import { Modal } from './Modal';
 interface PostCardProps {
   post: Post;
   onUpdate?: () => void; // Callback to refresh parent list
+  onLikesUpdated?: () => void; // Refresh profile likes stats if needed
 }
 
-export const PostCard = React.memo(({ post, onUpdate }: PostCardProps) => {
+export const PostCard = React.memo(
+  ({ post, onUpdate, onLikesUpdated }: PostCardProps) => {
   // We'll use local state for immediate feedback but rely on props for source of truth
   const [commentText, setCommentText] = useState('');
   const [showComments, setShowComments] = useState(false);
@@ -62,6 +64,7 @@ export const PostCard = React.memo(({ post, onUpdate }: PostCardProps) => {
       if (!currentUserId) return;
       const updatedPost = await toggleLike(post._id, currentUserId);
       setLocalPost(updatedPost);
+      if (onLikesUpdated) onLikesUpdated();
     } catch (err) {
       console.error('Failed to toggle like', err);
     }
