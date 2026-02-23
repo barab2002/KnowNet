@@ -20,6 +20,10 @@ export const UserProfilePage = () => {
   );
   const [posts, setPosts] = useState<Post[]>([]);
   const [user, setUser] = useState<User | null>(null);
+  const [lastPostDate, setLastPostDate] = useState<string | null>(null);
+  const [daysSinceLastPost, setDaysSinceLastPost] = useState<number | null>(
+    null,
+  );
   const [isLoadingUser, setIsLoadingUser] = useState(true);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -96,8 +100,37 @@ export const UserProfilePage = () => {
     }
   };
 
+  const fetchLastPostInfo = async () => {
+    if (!currentUserId) return;
+    try {
+      const myPosts = await getMyPosts(currentUserId);
+      if (!myPosts.length) {
+        setLastPostDate(null);
+        setDaysSinceLastPost(null);
+        return;
+      }
+
+      const latestPost = myPosts.reduce((latest, current) =>
+        new Date(current.createdAt) > new Date(latest.createdAt)
+          ? current
+          : latest,
+      );
+
+      const latestDate = new Date(latestPost.createdAt);
+      const now = new Date();
+      const diffMs = now.getTime() - latestDate.getTime();
+      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+      setLastPostDate(latestDate.toISOString());
+      setDaysSinceLastPost(diffDays);
+    } catch (error) {
+      console.error('Failed to fetch last post info:', error);
+    }
+  };
+
   useEffect(() => {
     fetchUserProfile();
+    fetchLastPostInfo();
   }, [currentUserId]);
 
   useEffect(() => {
@@ -260,6 +293,36 @@ export const UserProfilePage = () => {
                 {user?.likesReceived || 0}
               </p>
             </div>
+            <div className="flex flex-col gap-1 rounded-2xl bg-slate-50 dark:bg-[#192633] border border-slate-200 dark:border-[#324d67] p-5 transition-all hover:border-amber-500/30 group col-span-2 md:col-span-1">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="material-symbols-outlined text-sm text-amber-500 font-bold">
+                  schedule
+                </span>
+                <p className="text-slate-500 dark:text-[#92adc9] text-[10px] font-extrabold uppercase tracking-widest">
+                  Last Post
+                </p>
+              </div>
+              {lastPostDate ? (
+                <>
+                  <p className="text-lg font-bold leading-tight text-slate-900 dark:text-white">
+                    {new Date(lastPostDate).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric',
+                    })}
+                  </p>
+                  <p className="text-xs text-slate-500 dark:text-[#92adc9] mt-1">
+                    {daysSinceLastPost === 0
+                      ? 'Today'
+                      : `${daysSinceLastPost} day${daysSinceLastPost === 1 ? '' : 's'} ago`}
+                  </p>
+                </>
+              ) : (
+                <p className="text-sm font-semibold text-slate-500 dark:text-[#92adc9]">
+                  No posts yet
+                </p>
+              )}
+            </div>
           </div>
         </div>
 
@@ -303,6 +366,7 @@ export const UserProfilePage = () => {
               onUpdate={() => {
                 fetchPosts();
                 fetchUserProfile();
+                fetchLastPostInfo();
               }}
               onLikesUpdated={refreshLikesReceived}
             />
@@ -340,6 +404,7 @@ export const UserProfilePage = () => {
           setIsCreatePostModalOpen(false);
           fetchPosts();
           fetchUserProfile(); // Refresh to update post count
+          fetchLastPostInfo();
         }}
       />
       <EditProfileModal
