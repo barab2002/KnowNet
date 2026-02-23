@@ -117,13 +117,11 @@ export const FeedPage = () => {
               if (index === posts.length - 1) {
                 return (
                   <div key={post._id} ref={lastPostElementRef}>
-                    <PostCard post={post} onUpdate={handleRefresh} />
+                    <PostCard post={post} />
                   </div>
                 );
               }
-              return (
-                <PostCard key={post._id} post={post} onUpdate={handleRefresh} />
-              );
+              return <PostCard key={post._id} post={post} />;
             })}
           </div>
         ) : (
