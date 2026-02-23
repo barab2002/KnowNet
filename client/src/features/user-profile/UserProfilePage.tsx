@@ -114,7 +114,10 @@ export const UserProfilePage = () => {
 
     setIsUploadingImage(true);
     try {
-      await uploadProfileImage(currentUserId, file);
+      const updatedUser = await uploadProfileImage(currentUserId, file);
+      if (updatedUser?.profileImageUrl) {
+        updateUser({ profileImageUrl: updatedUser.profileImageUrl });
+      }
       await fetchUserProfile();
     } catch (error) {
       console.error('Failed to upload profile image:', error);
