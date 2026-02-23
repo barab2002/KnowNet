@@ -30,7 +30,10 @@ export const Layout = () => {
             </div>
             <span className="text-xl font-bold tracking-tight">KnowNet</span>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-semibold text-slate-600 dark:text-slate-300">
+              Hello {displayName}
+            </span>
             <NavLink
               to="/user-profile"
               className="w-10 h-10 rounded-full border-2 border-primary overflow-hidden hover:ring-2 hover:ring-primary/50 transition-all cursor-pointer"
