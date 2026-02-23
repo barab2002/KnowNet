@@ -13,33 +13,41 @@ import { Modal } from './Modal';
 interface PostCardProps {
   post: Post;
   onUpdate?: () => void; // Callback to refresh parent list
+  onLikesUpdated?: () => void; // Refresh profile likes stats if needed
 }
 
-export const PostCard = React.memo(({ post, onUpdate }: PostCardProps) => {
+export const PostCard = React.memo(
+  ({ post, onUpdate, onLikesUpdated }: PostCardProps) => {
   // We'll use local state for immediate feedback but rely on props for source of truth
   const [commentText, setCommentText] = useState('');
   const [showComments, setShowComments] = useState(false);
   const [isSummarizing, setIsSummarizing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Use local state for optimistic/immediate updates, sync with prop
+  const [localPost, setLocalPost] = useState(post);
   const [localSummary, setLocalSummary] = useState(post.summary);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   // Sync local summary if prop updates (e.g. from parent refresh)
   React.useEffect(() => {
+    setLocalPost(post);
     setLocalSummary(post.summary);
-  }, [post.summary]);
+  }, [post]);
 
   const { user } = useAuth();
   const currentUserId = user?._id || '';
 
   // Handle Author Info (Support both populated object and legacy string ID)
   const authorIdStr =
-    typeof post.authorId === 'object' ? post.authorId?._id : post.authorId;
+    typeof localPost.authorId === 'object'
+      ? localPost.authorId?._id
+      : localPost.authorId;
   const authorName =
-    typeof post.authorId === 'object' ? post.authorId?.name : null;
+    typeof localPost.authorId === 'object' ? localPost.authorId?.name : null;
   const authorImage =
-    typeof post.authorId === 'object' ? post.authorId?.profileImageUrl : null;
+    typeof localPost.authorId === 'object'
+      ? localPost.authorId?.profileImageUrl
+      : null;
 
   // Fallback to current user if ID matches (for optimistic updates or legacy)
   const displayName =
@@ -48,14 +56,15 @@ export const PostCard = React.memo(({ post, onUpdate }: PostCardProps) => {
     authorImage ||
     (authorIdStr === currentUserId ? user?.profileImageUrl : null);
 
-  const isLiked = post.likes.includes(currentUserId);
-  const isSaved = post.savedBy.includes(currentUserId);
+  const isLiked = localPost.likes.includes(currentUserId);
+  const isSaved = localPost.savedBy.includes(currentUserId);
 
   const handleLike = async () => {
     try {
       if (!currentUserId) return;
-      await toggleLike(post._id, currentUserId);
-      if (onUpdate) onUpdate();
+      const updatedPost = await toggleLike(post._id, currentUserId);
+      setLocalPost(updatedPost);
+      if (onLikesUpdated) onLikesUpdated();
     } catch (err) {
       console.error('Failed to toggle like', err);
     }
@@ -64,8 +73,8 @@ export const PostCard = React.memo(({ post, onUpdate }: PostCardProps) => {
   const handleSave = async () => {
     try {
       if (!currentUserId) return;
-      await toggleSave(post._id, currentUserId);
-      if (onUpdate) onUpdate();
+      const updatedPost = await toggleSave(post._id, currentUserId);
+      setLocalPost(updatedPost);
     } catch (err) {
       console.error('Failed to toggle save', err);
     }
@@ -75,9 +84,9 @@ export const PostCard = React.memo(({ post, onUpdate }: PostCardProps) => {
     e.preventDefault();
     if (!commentText.trim() || !currentUserId) return;
     try {
-      await addComment(post._id, commentText, currentUserId);
+      const updatedPost = await addComment(post._id, commentText, currentUserId);
+      setLocalPost(updatedPost);
       setCommentText('');
-      if (onUpdate) onUpdate();
     } catch (err) {
       console.error('Failed to add comment', err);
     }
@@ -91,11 +100,10 @@ export const PostCard = React.memo(({ post, onUpdate }: PostCardProps) => {
 
       if (updatedPost && updatedPost.summary) {
         setLocalSummary(updatedPost.summary);
+        setLocalPost(updatedPost);
       } else {
         throw new Error('Unable to generate summary. Please try again.');
       }
-
-      if (onUpdate) onUpdate();
     } catch (err: any) {
       console.error('Failed to summarize post', err);
       const msg = err.response?.data?.message || err.message || 'Unknown error';
@@ -141,7 +149,7 @@ export const PostCard = React.memo(({ post, onUpdate }: PostCardProps) => {
                   {displayName}
                 </h4>
                 <p className="text-xs text-slate-500">
-                  {new Date(post.createdAt).toLocaleDateString()}
+                  {new Date(localPost.createdAt).toLocaleDateString()}
                 </p>
               </div>
             </div>
@@ -189,13 +197,13 @@ export const PostCard = React.memo(({ post, onUpdate }: PostCardProps) => {
             className="text-slate-800 dark:text-slate-200 text-[15px] leading-relaxed mb-4"
             dir="auto"
           >
-            {post.content}
+            {localPost.content}
           </p>
 
-          {post.imageUrl && (
+          {localPost.imageUrl && (
             <div className="rounded-xl overflow-hidden mb-4 border border-slate-100 dark:border-slate-800">
               <img
-                src={post.imageUrl}
+                src={localPost.imageUrl}
                 alt="Post attachment"
                 className="w-full h-auto object-cover max-h-[500px]"
                 loading="lazy"
@@ -204,10 +212,10 @@ export const PostCard = React.memo(({ post, onUpdate }: PostCardProps) => {
           )}
 
           {/* Tags Section with User vs AI distinction */}
-          {((post.userTags && post.userTags.length > 0) ||
-            (post.aiTags && post.aiTags.length > 0)) && (
+          {((localPost.userTags && localPost.userTags.length > 0) ||
+            (localPost.aiTags && localPost.aiTags.length > 0)) && (
             <div className="flex flex-wrap gap-2 mb-4">
-              {post.userTags?.map((tag, idx) => (
+              {localPost.userTags?.map((tag, idx) => (
                 <span
                   key={`user-${idx}`}
                   className="text-xs font-semibold text-primary bg-primary/10 px-2 py-1 rounded"
@@ -215,7 +223,7 @@ export const PostCard = React.memo(({ post, onUpdate }: PostCardProps) => {
                   #{tag}
                 </span>
               ))}
-              {post.aiTags?.map((tag, idx) => (
+              {localPost.aiTags?.map((tag, idx) => (
                 <span
                   key={`ai-${idx}`}
                   className="text-xs font-medium text-slate-500 bg-slate-100 dark:bg-slate-700 dark:text-slate-300 px-2 py-1 rounded flex items-center gap-1"
@@ -237,7 +245,9 @@ export const PostCard = React.memo(({ post, onUpdate }: PostCardProps) => {
               <span className="material-icons-round text-lg">
                 {isLiked ? 'favorite' : 'favorite_border'}
               </span>
-              <span className="text-sm font-medium">{post.likes.length}</span>
+              <span className="text-sm font-medium">
+                {localPost.likes.length}
+              </span>
             </button>
             <button
               onClick={() => setShowComments(!showComments)}
@@ -247,7 +257,7 @@ export const PostCard = React.memo(({ post, onUpdate }: PostCardProps) => {
                 chat_bubble_outline
               </span>
               <span className="text-sm font-medium">
-                {post.comments.length}
+                {localPost.comments.length}
               </span>
             </button>
 
@@ -283,7 +293,7 @@ export const PostCard = React.memo(({ post, onUpdate }: PostCardProps) => {
           {showComments && (
             <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 animate-in slide-in-from-top-2">
               <div className="space-y-3 mb-4 max-h-60 overflow-y-auto">
-                {post.comments.map((comment, idx) => {
+                {localPost.comments.map((comment, idx) => {
                   const commentName =
                     comment.userName ||
                     (comment.userId === currentUserId
@@ -335,7 +345,7 @@ export const PostCard = React.memo(({ post, onUpdate }: PostCardProps) => {
                     </div>
                   );
                 })}
-                {post.comments.length === 0 && (
+                {localPost.comments.length === 0 && (
                   <p className="text-xs text-slate-400 italic">
                     No comments yet.
                   </p>
