@@ -277,22 +277,55 @@ export const PostCard = React.memo(({ post, onUpdate }: PostCardProps) => {
           {showComments && (
             <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 animate-in slide-in-from-top-2">
               <div className="space-y-3 mb-4 max-h-60 overflow-y-auto">
-                {post.comments.map((comment, idx) => (
-                  <div
-                    key={idx}
-                    className="bg-slate-50 dark:bg-slate-800/50 p-2 rounded-lg text-sm"
-                  >
-                    <span className="font-bold text-xs text-slate-500 mr-2">
-                      {comment.userName ||
-                        (comment.userId === currentUserId
-                          ? user?.name
-                          : 'KnowNet User')}
-                    </span>
-                    <span className="text-slate-800 dark:text-slate-200">
-                      {comment.content}
-                    </span>
-                  </div>
-                ))}
+                {post.comments.map((comment, idx) => {
+                  const commentName =
+                    comment.userName ||
+                    (comment.userId === currentUserId
+                      ? user?.name
+                      : 'KnowNet User');
+                  const commentImage =
+                    comment.userProfileImageUrl ||
+                    (comment.userId === currentUserId
+                      ? user?.profileImageUrl
+                      : undefined);
+
+                  return (
+                    <div
+                      key={idx}
+                      className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-lg text-sm"
+                    >
+                      <div className="flex items-start gap-2">
+                        <div className="w-8 h-8 rounded-full overflow-hidden bg-slate-200 flex-shrink-0">
+                          {commentImage ? (
+                            <img
+                              src={commentImage}
+                              alt="Comment author avatar"
+                              className="w-full h-full object-cover"
+                              loading="lazy"
+                            />
+                          ) : (
+                            <span className="material-icons-round text-slate-400 text-xl flex items-center justify-center h-full">
+                              person
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="font-bold text-xs text-slate-700 dark:text-slate-200">
+                              {commentName}
+                            </span>
+                            <span className="text-[11px] text-slate-400">
+                              {new Date(comment.createdAt).toLocaleDateString()}
+                            </span>
+                          </div>
+                          <p className="text-slate-800 dark:text-slate-200 mt-1">
+                            {comment.content}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
                 {post.comments.length === 0 && (
                   <p className="text-xs text-slate-400 italic">
                     No comments yet.
