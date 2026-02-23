@@ -21,9 +21,12 @@ export class UsersService {
     }
 
     let user = await this.userModel.findById(userId);
+    if (!user && initialData?.email) {
+      user = await this.userModel.findOne({ email: initialData.email });
+    }
     if (!user) {
       user = new this.userModel({
-        _id: userId, // Use userId as _id (from Google ID or whatever passed)
+        _id: userId,
         email: initialData?.email || `user-${userId}@knownet.com`,
         name: initialData?.name || 'Anonymous User',
         ...initialData,

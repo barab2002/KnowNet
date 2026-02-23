@@ -21,9 +21,14 @@ export class AuthController {
   @Post('firebase')
   async firebaseAuth(@Body() body: { idToken: string }) {
     if (!body.idToken) throw new UnauthorizedException('No token provided');
-    const decodedToken = await this.firebaseService.verifyIdToken(body.idToken);
-    const user = await this.authService.validateFirebaseUser(decodedToken);
-    return this.authService.login(user);
+    try {
+      const decodedToken = await this.firebaseService.verifyIdToken(body.idToken);
+      const user = await this.authService.validateFirebaseUser(decodedToken);
+      return this.authService.login(user);
+    } catch (error) {
+      console.error('Firebase auth error:', error.message);
+      throw new UnauthorizedException(error.message);
+    }
   }
 
   @Get('profile')
