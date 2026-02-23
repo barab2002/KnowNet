@@ -1,4 +1,6 @@
 import axios from 'axios';
+import { signInWithPopup } from 'firebase/auth';
+import { auth, googleProvider } from '../lib/firebase';
 
 export interface LoginCredentials {
   email: string;
@@ -25,14 +27,20 @@ export interface AuthResponse {
 
 const API_URL = '/api/auth';
 
+export const loginWithGoogle = async (): Promise<AuthResponse> => {
+  const result = await signInWithPopup(auth, googleProvider);
+  const idToken = await result.user.getIdToken();
+  const response = await axios.post<AuthResponse>(`${API_URL}/firebase`, {
+    idToken,
+  });
+  return response.data;
+};
+
 export const login = async (
   credentials: LoginCredentials,
 ): Promise<AuthResponse> => {
-  // Simulate API delay
   await new Promise((resolve) => setTimeout(resolve, 500));
 
-  // Generate consistent ID based on email so same user gets same ID
-  // Simple "hash" of email
   const userId =
     'user-' + credentials.email.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
 
@@ -43,7 +51,6 @@ export const login = async (
   };
 
   try {
-    // Ensure user exists in backend DB
     await createUser(user);
   } catch (error) {
     console.error('Failed to sync user to backend:', error);
@@ -58,7 +65,6 @@ export const login = async (
 import { createUser } from './users';
 
 export const register = async (data: RegisterData): Promise<AuthResponse> => {
-  // Simulate API delay
   await new Promise((resolve) => setTimeout(resolve, 500));
 
   const newUser = {
@@ -68,11 +74,9 @@ export const register = async (data: RegisterData): Promise<AuthResponse> => {
   };
 
   try {
-    // Create actual user document in backend so profile page works
     await createUser(newUser);
   } catch (error) {
     console.error('Failed to create user in backend DB:', error);
-    // We continue anyway since this is a mock auth flow, but warn
   }
 
   return {
@@ -82,7 +86,6 @@ export const register = async (data: RegisterData): Promise<AuthResponse> => {
 };
 
 export const logout = async (): Promise<void> => {
-  // Clear any server-side sessions if needed
   return Promise.resolve();
 };
 

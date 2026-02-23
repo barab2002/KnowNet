@@ -9,21 +9,13 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async validateGoogleUser(googleUser: any) {
-    // googleUser is the object returned from GoogleStrategy.validate
-    // We use the googleId as the User ID for simplicity in this implementation,
-    // or we could find by email/googleId
+  async validateFirebaseUser(decodedToken: any) {
+    const { uid, email, name, picture } = decodedToken;
 
-    // Check if user exists by googleId (we need to update UsersService for this)
-    // For now, let's reuse findOrCreate functionality.
-    // We'll use the googleId as the _id since our system uses string IDs.
-
-    const user = await this.usersService.findOrCreate(googleUser.googleId, {
-      email: googleUser.email,
-      name: `${googleUser.firstName} ${googleUser.lastName}`,
-      profileImageUrl: googleUser.picture,
-      googleAccessToken: googleUser.accessToken,
-      googleRefreshToken: googleUser.refreshToken,
+    const user = await this.usersService.findOrCreate(uid, {
+      email: email || '',
+      name: name || email?.split('@')[0] || 'User',
+      profileImageUrl: picture,
     });
 
     return user;
