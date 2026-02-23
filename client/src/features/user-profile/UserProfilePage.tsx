@@ -260,19 +260,6 @@ export const UserProfilePage = () => {
                 {user?.likesReceived || 0}
               </p>
             </div>
-            <div className="flex flex-col gap-1 rounded-2xl bg-slate-50 dark:bg-[#192633] border border-slate-200 dark:border-[#324d67] p-5 transition-all hover:border-amber-500/30 group col-span-2 md:col-span-1">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="material-symbols-outlined text-sm text-amber-500 font-bold">
-                  auto_awesome
-                </span>
-                <p className="text-slate-500 dark:text-[#92adc9] text-[10px] font-extrabold uppercase tracking-widest">
-                  AI Insights
-                </p>
-              </div>
-              <p className="text-3xl font-black leading-tight text-slate-900 dark:text-white">
-                {user?.aiSummariesCount || 0}
-              </p>
-            </div>
           </div>
         </div>
 
