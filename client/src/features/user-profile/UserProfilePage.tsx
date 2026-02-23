@@ -84,6 +84,18 @@ export const UserProfilePage = () => {
     promise?.then(setPosts).catch(console.error);
   };
 
+  const refreshLikesReceived = async () => {
+    if (!currentUserId) return;
+    try {
+      const actualLikes = await getTotalLikesForUser(currentUserId);
+      setUser((prev) =>
+        prev ? { ...prev, likesReceived: actualLikes } : prev,
+      );
+    } catch (error) {
+      console.error('Failed to refresh total likes:', error);
+    }
+  };
+
   useEffect(() => {
     fetchUserProfile();
   }, [currentUserId]);
@@ -305,6 +317,7 @@ export const UserProfilePage = () => {
                 fetchPosts();
                 fetchUserProfile();
               }}
+              onLikesUpdated={refreshLikesReceived}
             />
           ))}
 
