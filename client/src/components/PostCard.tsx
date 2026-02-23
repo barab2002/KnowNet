@@ -176,13 +176,19 @@ export const PostCard = React.memo(({ post, onUpdate }: PostCardProps) => {
                 </span>
                 AI Summary
               </div>
-              <p className="text-sm text-slate-700 dark:text-slate-300 italic">
+              <p
+                className="text-sm text-slate-700 dark:text-slate-300 italic"
+                dir="auto"
+              >
                 "{localSummary}"
               </p>
             </div>
           )}
 
-          <p className="text-slate-800 dark:text-slate-200 text-[15px] leading-relaxed mb-4">
+          <p
+            className="text-slate-800 dark:text-slate-200 text-[15px] leading-relaxed mb-4"
+            dir="auto"
+          >
             {post.content}
           </p>
 
@@ -318,7 +324,10 @@ export const PostCard = React.memo(({ post, onUpdate }: PostCardProps) => {
                               {new Date(comment.createdAt).toLocaleDateString()}
                             </span>
                           </div>
-                          <p className="text-slate-800 dark:text-slate-200 mt-1">
+                          <p
+                            className="text-slate-800 dark:text-slate-200 mt-1"
+                            dir="auto"
+                          >
                             {comment.content}
                           </p>
                         </div>
@@ -338,6 +347,7 @@ export const PostCard = React.memo(({ post, onUpdate }: PostCardProps) => {
                   value={commentText}
                   onChange={(e) => setCommentText(e.target.value)}
                   placeholder="Write a comment..."
+                  dir="auto"
                   className="flex-1 text-sm bg-slate-100 dark:bg-slate-800 border-none rounded-lg px-3 py-2 focus:ring-1 focus:ring-primary"
                 />
                 <button
