@@ -81,6 +81,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
             value={postText}
             onChange={(e) => setPostText(e.target.value)}
             placeholder={placeholder}
+            dir="auto"
             className="w-full min-h-[120px] p-4 bg-slate-50 dark:bg-[#233648]/50 border-none rounded-xl resize-none focus:ring-2 focus:ring-primary/20 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-[#92adc9] transition-all"
           />
         </div>
