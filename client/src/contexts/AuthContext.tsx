@@ -14,6 +14,7 @@ import {
   RegisterData,
   AuthResponse,
 } from '../api/auth';
+import { getUserProfile } from '../api/users';
 
 interface User {
   _id: string;
@@ -79,6 +80,23 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       delete axios.defaults.headers.common['Authorization'];
     }
   }, [token]);
+
+  useEffect(() => {
+    const hydrateProfile = async () => {
+      if (!user?._id || !token) return;
+      try {
+        const fullProfile = await getUserProfile(user._id);
+        if (fullProfile?.profileImageUrl &&
+            fullProfile.profileImageUrl !== user.profileImageUrl) {
+          updateUser({ profileImageUrl: fullProfile.profileImageUrl });
+        }
+      } catch (error) {
+        console.error('Failed to hydrate profile:', error);
+      }
+    };
+
+    hydrateProfile();
+  }, [user?._id, token]);
 
   const saveAuthState = (authData: AuthResponse, rememberMe: boolean) => {
     const storage: AuthStorage = {
