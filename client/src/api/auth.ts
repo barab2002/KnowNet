@@ -30,10 +30,10 @@ const API_URL = '/api/auth';
 export const loginWithGoogle = async (): Promise<AuthResponse> => {
   const result = await signInWithPopup(auth, googleProvider);
   const idToken = await result.user.getIdToken();
-  const response = await axios.post<AuthResponse>(`${API_URL}/firebase`, {
+  const response = await axios.post<{ access_token: string; user: AuthResponse['user'] }>(`${API_URL}/firebase`, {
     idToken,
   });
-  return response.data;
+  return { token: response.data.access_token, user: response.data.user };
 };
 
 export const login = async (
