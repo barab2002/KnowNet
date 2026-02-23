@@ -36,6 +36,8 @@ export class Post {
     type: [
       {
         userId: String,
+        userName: String,
+        userProfileImageUrl: String,
         content: String,
         createdAt: { type: Date, default: Date.now },
       },
@@ -44,6 +46,8 @@ export class Post {
   })
   comments: {
     userId: string;
+    userName?: string;
+    userProfileImageUrl?: string;
     content: string;
     createdAt: Date;
   }[];
