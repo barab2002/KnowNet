@@ -283,7 +283,10 @@ export const PostCard = React.memo(({ post, onUpdate }: PostCardProps) => {
                     className="bg-slate-50 dark:bg-slate-800/50 p-2 rounded-lg text-sm"
                   >
                     <span className="font-bold text-xs text-slate-500 mr-2">
-                      User {comment.userId.slice(0, 4)}
+                      {comment.userName ||
+                        (comment.userId === currentUserId
+                          ? user?.name
+                          : 'KnowNet User')}
                     </span>
                     <span className="text-slate-800 dark:text-slate-200">
                       {comment.content}
