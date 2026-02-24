@@ -364,7 +364,7 @@ export const UserProfilePage = () => {
               key={post._id}
               post={post}
               onUpdate={() => {
-                fetchPosts();
+                setPosts((prev) => prev.filter((p) => p._id !== post._id));
                 fetchUserProfile();
                 fetchLastPostInfo();
               }}

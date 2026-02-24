@@ -35,6 +35,7 @@ export const PostCard = React.memo(
   const [localSummary, setLocalSummary] = useState(post.summary);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const carouselRef = React.useRef<HTMLDivElement | null>(null);
 
   // Sync local summary if prop updates (e.g. from parent refresh)
@@ -163,9 +164,8 @@ export const PostCard = React.memo(
         throw new Error('Unable to generate summary. Please try again.');
       }
     } catch (err: any) {
-      console.error('Failed to summarize post', err);
-      const msg = err.response?.data?.message || err.message || 'Unknown error';
-      setError(`Failed: ${msg}`);
+      const msg = err.response?.data?.message || err.message || 'Failed to generate summary.';
+      setError(msg);
     } finally {
       setIsSummarizing(false);
     }
@@ -175,7 +175,8 @@ export const PostCard = React.memo(
     try {
       await deletePost(post._id, currentUserId);
       setShowDeleteModal(false);
-      if (onUpdate) onUpdate();
+      setIsDeleting(true);
+      setTimeout(() => { if (onUpdate) onUpdate(); }, 400);
     } catch (err) {
       console.error('Failed to delete post', err);
       alert('Failed to delete post');
@@ -206,7 +207,7 @@ export const PostCard = React.memo(
 
   return (
     <>
-      <article className="bg-white dark:bg-card-dark rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden hover:border-primary/50 transition-colors">
+      <article className={`bg-white dark:bg-card-dark rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden hover:border-primary/50 transition-all duration-400 ${isDeleting ? 'opacity-0 scale-95 -translate-y-2' : 'opacity-100 scale-100 translate-y-0'}`}>
         <div className="p-5">
           <div className="flex justify-between items-start mb-4">
             <div className="flex items-center gap-3">
@@ -386,14 +387,14 @@ export const PostCard = React.memo(
               onClick={handleSummarize}
               disabled={isSummarizing}
               className="flex items-center gap-1.5 text-slate-500 hover:text-primary transition-colors disabled:opacity-50 relative group"
-              title="Summarize"
+              title={localSummary ? 'Regenerate AI Summary' : 'Generate AI Summary'}
             >
               {isSummarizing ? (
                 <div className="w-6 h-6 flex items-center justify-center">
                   <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
                 </div>
               ) : (
-                <span className="material-symbols-outlined text-xl group-hover:scale-110 transition-transform">
+                <span className={`material-symbols-outlined text-xl group-hover:scale-110 transition-transform ${localSummary ? 'text-primary' : ''}`}>
                   cognition_2
                 </span>
               )}

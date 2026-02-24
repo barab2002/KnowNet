@@ -114,14 +114,15 @@ export const FeedPage = () => {
         ) : posts.length > 0 ? (
           <div className="flex flex-col gap-6 animate-in fade-in duration-1000">
             {posts.map((post, index) => {
+              const handleRemove = () => setPosts((prev) => prev.filter((p) => p._id !== post._id));
               if (index === posts.length - 1) {
                 return (
                   <div key={post._id} ref={lastPostElementRef}>
-                    <PostCard post={post} />
+                    <PostCard post={post} onUpdate={handleRemove} />
                   </div>
                 );
               }
-              return <PostCard key={post._id} post={post} />;
+              return <PostCard key={post._id} post={post} onUpdate={handleRemove} />;
             })}
           </div>
         ) : (
