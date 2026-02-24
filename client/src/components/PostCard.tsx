@@ -146,14 +146,14 @@ export const PostCard = React.memo(
 
   const handleEditSave = async (
     content: string,
-    image?: File,
-    removeImage?: boolean,
+    images?: File[],
+    removeImageUrls?: string[],
   ) => {
     try {
       const updatedPost = await updatePost(
         post._id,
-        { content, removeImage },
-        image,
+        { content, removeImageUrls },
+        images,
         token,
       );
       setLocalPost(updatedPost);
@@ -486,7 +486,7 @@ export const PostCard = React.memo(
       <EditPostModal
         isOpen={showEditModal}
         initialContent={localPost.content}
-        initialImageUrl={localPost.imageUrl}
+        initialImageUrls={images}
         onClose={() => setShowEditModal(false)}
         onSave={handleEditSave}
       />
