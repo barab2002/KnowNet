@@ -35,6 +35,7 @@ export const PostCard = React.memo(
   const [localSummary, setLocalSummary] = useState(post.summary);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const carouselRef = React.useRef<HTMLDivElement | null>(null);
 
   // Sync local summary if prop updates (e.g. from parent refresh)
@@ -175,7 +176,8 @@ export const PostCard = React.memo(
     try {
       await deletePost(post._id, currentUserId);
       setShowDeleteModal(false);
-      if (onUpdate) onUpdate();
+      setIsDeleting(true);
+      setTimeout(() => { if (onUpdate) onUpdate(); }, 400);
     } catch (err) {
       console.error('Failed to delete post', err);
       alert('Failed to delete post');
@@ -206,7 +208,7 @@ export const PostCard = React.memo(
 
   return (
     <>
-      <article className="bg-white dark:bg-card-dark rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden hover:border-primary/50 transition-colors">
+      <article className={`bg-white dark:bg-card-dark rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden hover:border-primary/50 transition-all duration-400 ${isDeleting ? 'opacity-0 scale-95 -translate-y-2' : 'opacity-100 scale-100 translate-y-0'}`}>
         <div className="p-5">
           <div className="flex justify-between items-start mb-4">
             <div className="flex items-center gap-3">
