@@ -82,11 +82,10 @@ describe('AuthService', () => {
 
       expect(result.accessToken).toBe('signed-token');
       expect(result.user).toBe(user);
-      expect(mockJwtService.sign).toHaveBeenCalledWith({
-        sub: '123',
-        email: 'test@test.com',
-        name: 'John',
-      });
+      expect(mockJwtService.sign).toHaveBeenCalledWith(
+        { sub: '123', email: 'test@test.com', name: 'John' },
+        expect.objectContaining({ secret: expect.any(String), expiresIn: expect.any(String) }),
+      );
     });
 
     it('should throw if jwt sign fails', async () => {

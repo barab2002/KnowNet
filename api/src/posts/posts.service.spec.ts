@@ -65,6 +65,7 @@ describe('PostsService', () => {
 
   const mockAiService = {
     generateSummary: jest.fn().mockResolvedValue('Summary'),
+    generateTags: jest.fn().mockResolvedValue(['tag1', 'tag2', 'tag3', 'tag4', 'tag5']),
   };
 
   beforeEach(async () => {
@@ -98,12 +99,48 @@ describe('PostsService', () => {
   describe('create', () => {
     it('should create a post successfully', async () => {
       const dto: CreatePostDto = { content: 'hello #world', authorId: 'user1' };
+      MockPostModel.findByIdAndUpdate.mockResolvedValue({});
 
       const result = await service.create(dto);
       expect(result).toBeDefined();
-      expect(mockUsersService.incrementPostsCount).toHaveBeenCalledWith(
-        'user1',
+      expect(mockUsersService.incrementPostsCount).toHaveBeenCalledWith('user1');
+    });
+
+    it('should call generateSummary and generateTags synchronously on creation', async () => {
+      const dto: CreatePostDto = { content: 'a post about machine learning', authorId: 'user1' };
+      MockPostModel.findByIdAndUpdate.mockResolvedValue({});
+
+      await service.create(dto);
+
+      expect(mockAiService.generateSummary).toHaveBeenCalledWith('a post about machine learning');
+      expect(mockAiService.generateTags).toHaveBeenCalledWith('a post about machine learning');
+      expect(MockPostModel.findByIdAndUpdate).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ tags: expect.any(Array), summary: 'Summary' }),
       );
+    });
+
+    it('should extract user hashtags and merge with AI tags', async () => {
+      const dto: CreatePostDto = { content: 'hello #react #typescript world', authorId: 'user1' };
+      MockPostModel.findByIdAndUpdate.mockResolvedValue({});
+
+      await service.create(dto);
+
+      expect(MockPostModel.findByIdAndUpdate).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          userTags: ['react', 'typescript'],
+          aiTags: ['tag1', 'tag2', 'tag3', 'tag4', 'tag5'],
+        }),
+      );
+    });
+
+    it('should still return post even if AI processing fails', async () => {
+      mockAiService.generateSummary.mockRejectedValueOnce(new Error('AI down'));
+      const dto: CreatePostDto = { content: 'fail ai', authorId: 'user1' };
+
+      const result = await service.create(dto);
+      expect(result).toBeDefined();
     });
 
     it('should propagate save errors', async () => {
