@@ -150,8 +150,13 @@ export const updatePost = async (
   image?: File,
   token?: string | null,
 ): Promise<Post> => {
-  const authHeader =
+  const rawToken =
     token || (axios.defaults.headers.common?.Authorization as string | undefined);
+  const authHeader = rawToken
+    ? rawToken.startsWith('Bearer ')
+      ? rawToken
+      : `Bearer ${rawToken}`
+    : undefined;
   if (image) {
     const formData = new FormData();
     if (data.content) {
