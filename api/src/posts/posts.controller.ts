@@ -105,6 +105,12 @@ export class PostsController {
     return this.postsService.addComment(id, userId, content);
   }
 
+  @Get(':id/comments')
+  @ApiOperation({ summary: 'Get all comments for a post' })
+  async getComments(@Param('id') id: string) {
+    return this.postsService.getComments(id);
+  }
+
   @Get('user/:userId')
   @ApiOperation({ summary: 'Get user posts (mocked to all for now)' })
   async getUserPosts(@Param('userId') userId: string) {
