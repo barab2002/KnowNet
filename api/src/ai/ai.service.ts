@@ -38,24 +38,18 @@ export class AiService {
       return this.extractKeywordsFallback(content);
     }
 
-    const prompt = `You are tagging posts for a student knowledge-sharing platform. Generate 10 to 30 high-quality search tags for the post below.
+      const prompt = `Act as an expert content taxonomist for a student knowledge-sharing platform. Analyze the provided post and generate between 15 and 30 unique, single-word labels that capture the academic subject, specific topics, parent disciplines, content type, and emotional or contextual tone.
 
-Think across these categories to ensure good coverage:
-1. Academic field / subject (e.g. "mathematics", "computer science", "biology", "history")
-2. Specific topic (e.g. "derivatives", "binary search", "photosynthesis", "world war 2")
-3. Parent / related concepts — CRITICAL: if the post is about geometry, also add "math"; if about sorting algorithms, also add "programming" and "computer science"
-4. Content type (e.g. "study tip", "exam prep", "homework help", "explanation", "summary", "question")
-5. Practical context (e.g. "university", "high school", "beginner", "finals", "deadline")
+Constraints:
+- Format: Return ONLY a JSON array of strings — no explanation, no markdown, no code block
+- Length: Exactly one word per label
+- Quality: Use high-signal keywords (e.g. "calculus" not "math-stuff", "struggling" not "hard")
+- Coverage: Include the specific topic AND its parent fields (post about geometry → also include "mathematics"; post about sorting → also include "programming")
+- Content type: Include what kind of post it is (e.g. "question", "explanation", "tip", "summary", "homework", "exam")
+- Avoid: generic filler words like "post", "text", "content", "information", "topic", "thing"
+- Language: Return tags in the SAME language as the post — Hebrew post → Hebrew tags, English post → English tags
 
-Rules:
-- Each tag must be 1 to 3 words, lowercase
-- Include BOTH specific tags AND their broad parent fields — most important rule for search quality
-- No filler tags like "post", "content", "topic", "information"
-- Return ONLY a raw JSON array of strings — no explanation, no markdown, no code block
-
-IMPORTANT: Return tags in the SAME language as the post. Hebrew post → Hebrew tags. English post → English tags.
-
-Post content:
+Post to analyze:
 ${content}`;
 
     try {
