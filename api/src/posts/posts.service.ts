@@ -134,7 +134,9 @@ export class PostsService {
   async updatePostContent(
     postId: string,
     userId: string,
-    content: string,
+    content?: string,
+    imageBuffer?: Buffer,
+    mimetype?: string,
   ): Promise<Post> {
     const post = await this.postModel.findById(postId);
     if (!post) throw new NotFoundException('Post not found');
@@ -143,17 +145,27 @@ export class PostsService {
       throw new ForbiddenException('Unauthorized to edit this post');
     }
 
-    const { summary, tags, userTags, aiTags } = await this.buildAiMetadata(
-      content,
-    );
+    if (imageBuffer && mimetype) {
+      post.imageUrl = this.buildImageUrl(imageBuffer, mimetype);
+    }
 
-    post.content = content;
-    post.summary = summary;
-    post.tags = tags;
-    post.userTags = userTags;
-    post.aiTags = aiTags;
+    if (typeof content === 'string' && content !== post.content) {
+      const { summary, tags, userTags, aiTags } = await this.buildAiMetadata(
+        content,
+      );
+      post.content = content;
+      post.summary = summary;
+      post.tags = tags;
+      post.userTags = userTags;
+      post.aiTags = aiTags;
+    }
 
     return post.save();
+  }
+
+  private buildImageUrl(imageBuffer: Buffer, mimetype: string) {
+    const b64 = Buffer.from(imageBuffer).toString('base64');
+    return `data:${mimetype};base64,${b64}`;
   }
 
   async toggleLike(postId: string, userId: string): Promise<Post> {
