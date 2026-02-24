@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsBoolean, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class UpdatePostDto {
@@ -10,4 +10,12 @@ export class UpdatePostDto {
   @IsOptional()
   @IsNotEmpty()
   content?: string;
+
+  @ApiPropertyOptional({
+    description: 'Remove the existing image from the post',
+    example: true,
+  })
+  @IsOptional()
+  @IsBoolean()
+  removeImage?: boolean;
 }
