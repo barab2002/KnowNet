@@ -155,8 +155,14 @@ export const updatePost = async (
       formData.append('content', data.content);
     }
     formData.append('image', image);
+    const authHeader = axios.defaults.headers.common?.Authorization as
+      | string
+      | undefined;
     const response = await axios.patch<Post>(`${API_URL}/${postId}`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
+      headers: {
+        'Content-Type': 'multipart/form-data',
+        ...(authHeader ? { Authorization: authHeader } : {}),
+      },
     });
     return response.data;
   }
