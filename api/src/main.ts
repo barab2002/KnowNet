@@ -24,8 +24,8 @@ async function bootstrap() {
 
   const httpsOptions = isProduction
     ? {
-        key: readFileSync(join(process.cwd(), '/home/node89/tepper/client-key.pem')),
-        cert: readFileSync(join(process.cwd(), '/home/node89/tepper/client-cert.pem')),
+        key: readFileSync(join(process.cwd(), '/../../client-key.pem')),
+        cert: readFileSync(join(process.cwd(), '/../../client-cert.pem')),
       }
     : undefined;
 
