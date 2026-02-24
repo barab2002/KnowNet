@@ -21,9 +21,16 @@ export const LoginPage = () => {
 
     try {
       await login(formData);
-      navigate('/'); // Navigate to home page after successful login
-    } catch (err) {
-      setError('Invalid email or password. Please try again.');
+      navigate('/');
+    } catch (err: any) {
+      const code = err?.code;
+      if (code === 'auth/invalid-credential' || code === 'auth/wrong-password' || code === 'auth/user-not-found') {
+        setError('Invalid email or password. Please try again.');
+      } else if (code === 'auth/too-many-requests') {
+        setError('Too many failed attempts. Please try again later.');
+      } else {
+        setError('Sign in failed. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }

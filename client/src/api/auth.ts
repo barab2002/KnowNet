@@ -1,5 +1,11 @@
 import axios from 'axios';
-import { signInWithPopup } from 'firebase/auth';
+import {
+  signInWithPopup,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  updateProfile,
+  signOut,
+} from 'firebase/auth';
 import { auth, googleProvider } from '../lib/firebase';
 
 export interface LoginCredentials {
@@ -27,71 +33,39 @@ export interface AuthResponse {
 
 const API_URL = '/api/auth';
 
-export const loginWithGoogle = async (): Promise<AuthResponse> => {
-  const result = await signInWithPopup(auth, googleProvider);
-  const idToken = await result.user.getIdToken();
-  const response = await axios.post<{ access_token: string; user: AuthResponse['user'] }>(`${API_URL}/firebase`, {
-    idToken,
-  });
+const exchangeFirebaseToken = async (idToken: string): Promise<AuthResponse> => {
+  const response = await axios.post<{ access_token: string; user: AuthResponse['user'] }>(
+    `${API_URL}/firebase`,
+    { idToken },
+  );
   return { token: response.data.access_token, user: response.data.user };
 };
 
-export const login = async (
-  credentials: LoginCredentials,
-): Promise<AuthResponse> => {
-  await new Promise((resolve) => setTimeout(resolve, 500));
-
-  const userId =
-    'user-' + credentials.email.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-
-  const user = {
-    _id: userId,
-    email: credentials.email,
-    name: credentials.email.split('@')[0],
-  };
-
-  try {
-    await createUser(user);
-  } catch (error) {
-    console.error('Failed to sync user to backend:', error);
-  }
-
-  return {
-    user,
-    token: 'mock-jwt-token-' + Date.now(),
-  };
+export const loginWithGoogle = async (): Promise<AuthResponse> => {
+  const result = await signInWithPopup(auth, googleProvider);
+  const idToken = await result.user.getIdToken();
+  return exchangeFirebaseToken(idToken);
 };
 
-import { createUser } from './users';
+export const login = async (credentials: LoginCredentials): Promise<AuthResponse> => {
+  const result = await signInWithEmailAndPassword(auth, credentials.email, credentials.password);
+  const idToken = await result.user.getIdToken();
+  return exchangeFirebaseToken(idToken);
+};
 
 export const register = async (data: RegisterData): Promise<AuthResponse> => {
-  await new Promise((resolve) => setTimeout(resolve, 500));
-
-  const newUser = {
-    _id: 'user-' + Date.now(),
-    email: data.email,
-    name: data.name,
-  };
-
-  try {
-    await createUser(newUser);
-  } catch (error) {
-    console.error('Failed to create user in backend DB:', error);
-  }
-
-  return {
-    user: newUser,
-    token: 'mock-jwt-token-' + Date.now(),
-  };
+  const result = await createUserWithEmailAndPassword(auth, data.email, data.password);
+  await updateProfile(result.user, { displayName: data.name });
+  // Force-refresh so the token includes the updated displayName
+  const idToken = await result.user.getIdToken(true);
+  return exchangeFirebaseToken(idToken);
 };
 
 export const logout = async (): Promise<void> => {
-  return Promise.resolve();
+  await signOut(auth);
 };
 
-export const getProfile = async (
-  token: string,
-): Promise<AuthResponse['user']> => {
+export const getProfile = async (token: string): Promise<AuthResponse['user']> => {
   const response = await axios.get<AuthResponse['user']>(`${API_URL}/profile`, {
     headers: { Authorization: `Bearer ${token}` },
   });
