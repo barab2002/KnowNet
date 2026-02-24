@@ -26,6 +26,14 @@ RUN npx nx build client
 # Production stage
 FROM nginx:alpine
 
+# Install openssl to generate self-signed certificate
+RUN apk add --no-cache openssl && \
+    mkdir -p /etc/nginx/ssl && \
+    openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+      -keyout /etc/nginx/ssl/privkey.pem \
+      -out /etc/nginx/ssl/fullchain.pem \
+      -subj "/C=IL/ST=Center/L=Rishon/O=Colman/OU=CS/CN=node96.cs.colman.ac.il"
+
 # Copy built assets
 COPY --from=builder /app/dist/client /usr/share/nginx/html
 
