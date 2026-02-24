@@ -25,9 +25,10 @@ export class AiService {
 
     try {
       const model = this.genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-      const prompt = `Analyze the following post and generate 3 to 5 relevant topic tags.
+      const prompt = `Analyze the following post and generate between 5 and 20 relevant topic tags.
 Return ONLY a JSON array of short, lowercase tag strings (1 to 3 words each). No explanation, no markdown, just the raw JSON array.
-Example: ["machine learning", "python", "data science"]
+Aim for at least 5 tags that cover the main topics, themes, and concepts in the post.
+Example: ["machine learning", "python", "data science", "neural networks", "deep learning"]
 
 Post content: ${content}`;
 
@@ -36,7 +37,7 @@ Post content: ${content}`;
       const tags = JSON.parse(text) as string[];
 
       if (!Array.isArray(tags)) throw new Error('Response is not an array');
-      return tags.slice(0, 5).map((t) => t.toLowerCase().trim());
+      return tags.slice(0, 20).map((t) => t.toLowerCase().trim());
     } catch (error) {
       this.logger.error('Failed to generate tags with Gemini', error);
       return this.extractKeywordsFallback(content);

@@ -63,39 +63,19 @@ export class PostsService {
       this.incrementPostCount(authorId);
     }
 
-    // 2. Trigger background AI processing
-    this.processAiInBackground(createdPost._id.toString(), content).catch(
-      (err) =>
-        this.logger.error(
-          `Background AI processing failed for post ${createdPost._id}`,
-          err,
-        ),
-    );
+    // 2. Run AI processing synchronously so tags are ready when the post is returned
+    try {
+      const { summary, tags, userTags, aiTags } = await this.buildAiMetadata(content);
+      await this.postModel.findByIdAndUpdate(createdPost._id, { summary, tags, userTags, aiTags });
+      createdPost.summary = summary;
+      createdPost.tags = tags;
+      createdPost.userTags = userTags;
+      createdPost.aiTags = aiTags;
+    } catch (err) {
+      this.logger.error(`AI processing failed for post ${createdPost._id}`, err);
+    }
 
     return createdPost;
-  }
-
-  // Helper for background processing
-  private async processAiInBackground(postId: string, content: string) {
-    this.logger.log(`Starting background AI processing for post ${postId}`);
-
-    try {
-      const { summary, tags, userTags, aiTags } = await this.buildAiMetadata(
-        content,
-      );
-
-      // Update the post
-      await this.postModel.findByIdAndUpdate(postId, {
-        summary,
-        tags,
-        userTags,
-        aiTags,
-      });
-
-      this.logger.log(`Completed background AI processing for post ${postId}`);
-    } catch (error) {
-      this.logger.error(`Failed to process AI for post ${postId}`, error);
-    }
   }
 
   private async buildAiMetadata(content: string) {
