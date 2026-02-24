@@ -1,15 +1,26 @@
 services:
+  nginx:
+    image: nginx:alpine
+    container_name: knownet-nginx
+    ports:
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./cert:/etc/nginx/ssl:ro
+    depends_on:
+      - client
+      - api
+    restart: always
+
   api:
     image: ghcr.io/barab2002/knownet-api:latest
     container_name: knownet-api
     env_file: .env.production
-    network_mode: host
     restart: always
 
   client:
     image: ghcr.io/barab2002/knownet-client:latest
     container_name: knownet-client
-    network_mode: host
     depends_on:
       - api
     restart: always
