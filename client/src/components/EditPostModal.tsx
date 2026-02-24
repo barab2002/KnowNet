@@ -6,7 +6,7 @@ interface EditPostModalProps {
   initialContent: string;
   initialImageUrl?: string;
   onClose: () => void;
-  onSave: (content: string, image?: File) => Promise<void> | void;
+  onSave: (content: string, image?: File, removeImage?: boolean) => Promise<void> | void;
 }
 
 export const EditPostModal: React.FC<EditPostModalProps> = ({
@@ -21,29 +21,35 @@ export const EditPostModal: React.FC<EditPostModalProps> = ({
   const [selectedImage, setSelectedImage] = useState<File | undefined>(
     undefined,
   );
+  const [removeImage, setRemoveImage] = useState(false);
 
   React.useEffect(() => {
     if (isOpen) {
       setContent(initialContent);
       setSelectedImage(undefined);
+      setRemoveImage(false);
     }
   }, [isOpen, initialContent]);
 
   const trimmed = useMemo(() => content.trim(), [content]);
   const isContentChanged = trimmed !== initialContent.trim();
-  const isDisabled = trimmed.length === 0 || (!isContentChanged && !selectedImage);
+  const isDisabled =
+    trimmed.length === 0 || (!isContentChanged && !selectedImage && !removeImage);
   const previewUrl = useMemo(() => {
     if (selectedImage) {
       return URL.createObjectURL(selectedImage);
     }
+    if (removeImage) {
+      return undefined;
+    }
     return initialImageUrl;
-  }, [selectedImage, initialImageUrl]);
+  }, [selectedImage, initialImageUrl, removeImage]);
 
   const handleSave = async () => {
     if (isDisabled) return;
     try {
       setIsSaving(true);
-      await onSave(trimmed, selectedImage);
+      await onSave(trimmed, selectedImage, removeImage);
     } finally {
       setIsSaving(false);
     }
@@ -93,6 +99,16 @@ export const EditPostModal: React.FC<EditPostModalProps> = ({
               }
               className="text-sm text-slate-500"
             />
+            {initialImageUrl && (
+              <label className="flex items-center gap-2 text-xs text-slate-500">
+                <input
+                  type="checkbox"
+                  checked={removeImage}
+                  onChange={(e) => setRemoveImage(e.target.checked)}
+                />
+                Remove current image
+              </label>
+            )}
           </div>
         </div>
         <div className="flex justify-end gap-3">
