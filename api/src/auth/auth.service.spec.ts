@@ -5,8 +5,6 @@ import { JwtService } from '@nestjs/jwt';
 
 describe('AuthService', () => {
   let service: AuthService;
-  let usersService: UsersService;
-  let jwtService: JwtService;
 
   const mockUsersService = {
     findOrCreate: jest.fn(),
@@ -26,42 +24,52 @@ describe('AuthService', () => {
     }).compile();
 
     service = module.get<AuthService>(AuthService);
-    usersService = module.get<UsersService>(UsersService);
-    jwtService = module.get<JwtService>(JwtService);
   });
 
   afterEach(() => {
     jest.clearAllMocks();
   });
 
-  describe('validateGoogleUser', () => {
-    const googleUser = {
-      googleId: '123',
+  describe('validateFirebaseUser', () => {
+    const decodedToken = {
+      uid: 'firebase-uid-123',
       email: 'test@test.com',
-      firstName: 'John',
-      lastName: 'Doe',
-      picture: 'pic',
-      accessToken: 'token',
-      refreshToken: 'refresh',
+      name: 'John Doe',
+      picture: 'https://example.com/pic.jpg',
     };
 
-    it('should validate and create/find user', async () => {
-      const user = { _id: '123', ...googleUser };
+    it('should find or create user from Firebase decoded token', async () => {
+      const user = { _id: 'firebase-uid-123', email: 'test@test.com', name: 'John Doe' };
       mockUsersService.findOrCreate.mockResolvedValue(user);
 
-      const result = await service.validateGoogleUser(googleUser);
+      const result = await service.validateFirebaseUser(decodedToken);
+
       expect(result).toBe(user);
       expect(mockUsersService.findOrCreate).toHaveBeenCalledWith(
-        '123',
-        expect.objectContaining({ email: 'test@test.com' }),
+        'firebase-uid-123',
+        expect.objectContaining({
+          email: 'test@test.com',
+          name: 'John Doe',
+          profileImageUrl: 'https://example.com/pic.jpg',
+        }),
+      );
+    });
+
+    it('should fall back to email prefix when name is missing', async () => {
+      const tokenWithoutName = { uid: 'uid-1', email: 'test@test.com', name: undefined, picture: undefined };
+      mockUsersService.findOrCreate.mockResolvedValue({ _id: 'uid-1' });
+
+      await service.validateFirebaseUser(tokenWithoutName);
+
+      expect(mockUsersService.findOrCreate).toHaveBeenCalledWith(
+        'uid-1',
+        expect.objectContaining({ name: 'test' }),
       );
     });
 
     it('should throw if usersService throws', async () => {
       mockUsersService.findOrCreate.mockRejectedValue(new Error('DB Error'));
-      await expect(service.validateGoogleUser(googleUser)).rejects.toThrow(
-        'DB Error',
-      );
+      await expect(service.validateFirebaseUser(decodedToken)).rejects.toThrow('DB Error');
     });
   });
 
@@ -81,7 +89,7 @@ describe('AuthService', () => {
       });
     });
 
-    it('should fail if jwt sign fails', async () => {
+    it('should throw if jwt sign fails', async () => {
       mockJwtService.sign.mockImplementation(() => {
         throw new Error('Sign failed');
       });

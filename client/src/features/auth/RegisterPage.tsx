@@ -53,8 +53,15 @@ export const RegisterPage = () => {
     try {
       await register(formData);
       navigate('/'); // Navigate to home page after successful registration
-    } catch (err) {
-      setErrors({ general: 'Registration failed. Please try again.' });
+    } catch (err: any) {
+      const code = err?.code;
+      if (code === 'auth/email-already-in-use') {
+        setErrors({ general: 'An account with this email already exists.' });
+      } else if (code === 'auth/weak-password') {
+        setErrors({ general: 'Password is too weak. Please choose a stronger password.' });
+      } else {
+        setErrors({ general: 'Registration failed. Please try again.' });
+      }
     } finally {
       setIsLoading(false);
     }

@@ -7,6 +7,7 @@ import SettingsPage from '../features/settings/SettingsPage';
 import LoginPage from '../features/auth/LoginPage';
 import LoginSuccessPage from '../features/auth/LoginSuccessPage';
 import RegisterPage from '../features/auth/RegisterPage';
+import ForgotPasswordPage from '../features/auth/ForgotPasswordPage';
 import { Layout } from '../components/Layout';
 import { AuthProvider } from '../contexts/AuthContext';
 import { ProtectedRoute } from '../components/ProtectedRoute';
@@ -20,6 +21,7 @@ export function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/login/success" element={<LoginSuccessPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
           {/* Protected Routes */}
           <Route
