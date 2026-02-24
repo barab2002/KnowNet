@@ -47,6 +47,7 @@ const postResponseSchema = {
       items: {
         type: 'object',
         properties: {
+          _id: { type: 'string' },
           userId: { type: 'string' },
           userName: { type: 'string', nullable: true },
           userProfileImageUrl: { type: 'string', nullable: true },
@@ -177,6 +178,7 @@ export class PostsController {
       items: {
         type: 'object',
         properties: {
+          _id: { type: 'string' },
           userId: { type: 'string' },
           userName: { type: 'string', nullable: true },
           userProfileImageUrl: { type: 'string', nullable: true },
@@ -188,6 +190,25 @@ export class PostsController {
   })
   async getComments(@Param('id') id: string) {
     return this.postsService.getComments(id);
+  }
+
+  @Delete(':id/comments/:commentId')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Delete a comment from a post' })
+  @ApiResponse({
+    status: 200,
+    description: 'Updated post after comment removal',
+    schema: postResponseSchema,
+  })
+  @ApiResponse({ status: 403, description: 'Unauthorized' })
+  @ApiResponse({ status: 404, description: 'Post or comment not found' })
+  async deleteComment(
+    @Param('id') id: string,
+    @Param('commentId') commentId: string,
+    @Req() req,
+  ) {
+    return this.postsService.removeComment(id, commentId, req.user._id);
   }
 
   @Get('user/:userId')
