@@ -57,6 +57,9 @@ export class Post {
 
   @Prop({ type: [Number], default: [], select: false })
   embedding: number[];
+
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export const PostSchema = SchemaFactory.createForClass(Post);
