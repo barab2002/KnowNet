@@ -76,11 +76,11 @@ describe('AuthService', () => {
   describe('login', () => {
     const user = { _id: '123', email: 'test@test.com', name: 'John' };
 
-    it('should return access_token and user', async () => {
+    it('should return accessToken and user', async () => {
       mockJwtService.sign.mockReturnValue('signed-token');
       const result = await service.login(user);
 
-      expect(result.access_token).toBe('signed-token');
+      expect(result.accessToken).toBe('signed-token');
       expect(result.user).toBe(user);
       expect(mockJwtService.sign).toHaveBeenCalledWith({
         sub: '123',
