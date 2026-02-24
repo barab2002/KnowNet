@@ -17,6 +17,7 @@ describe('PostsController', () => {
     toggleLike: jest.fn(),
     toggleSave: jest.fn(),
     addComment: jest.fn(),
+    removeComment: jest.fn(),
     getLikedPosts: jest.fn(),
     getSavedPosts: jest.fn(),
     getTotalLikesForUser: jest.fn(),
@@ -72,8 +73,6 @@ describe('PostsController', () => {
       expect(await controller.create(dto, req)).toBe(result);
       expect(mockPostsService.createWithImage).toHaveBeenCalledWith(
         expect.objectContaining({ authorId: 'user1' }),
-        '',
-        undefined,
         undefined,
       );
     });
@@ -82,11 +81,12 @@ describe('PostsController', () => {
       const dto: CreatePostDto = { content: 'test', authorId: 'user1' };
       const req = { user: { _id: 'user1' } };
       const image = { buffer: Buffer.from('img'), mimetype: 'image/png' };
+      const images = [image];
       const result = { _id: 'post1', ...dto, imageUrl: 'data:...' };
 
       mockPostsService.createWithImage.mockResolvedValue(result);
 
-      expect(await controller.create(dto, req, image)).toBe(result);
+      expect(await controller.create(dto, req, images)).toBe(result);
       expect(mockPostsService.createWithImage).toHaveBeenCalled();
     });
 
@@ -249,6 +249,31 @@ describe('PostsController', () => {
       const req = { user: { _id: 'user1' } };
       mockPostsService.delete.mockRejectedValue(new Error('Fail'));
       await expect(controller.delete('1', req)).rejects.toThrow('Fail');
+    });
+  });
+
+  describe('deleteComment', () => {
+    it('should delete comment', async () => {
+      const req = { user: { _id: 'user1' } };
+      const result = { _id: 'post1', comments: [] };
+      mockPostsService.removeComment.mockResolvedValue(result);
+
+      expect(await controller.deleteComment('post1', 'comment1', req)).toBe(
+        result,
+      );
+      expect(mockPostsService.removeComment).toHaveBeenCalledWith(
+        'post1',
+        'comment1',
+        'user1',
+      );
+    });
+
+    it('should propagate error', async () => {
+      const req = { user: { _id: 'user1' } };
+      mockPostsService.removeComment.mockRejectedValue(new Error('Fail'));
+      await expect(
+        controller.deleteComment('post1', 'comment1', req),
+      ).rejects.toThrow('Fail');
     });
   });
 });

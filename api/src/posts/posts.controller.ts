@@ -14,7 +14,6 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
-import { Express } from 'express';
 import {
   ApiBearerAuth,
   ApiBody,
@@ -27,6 +26,11 @@ import { AuthGuard } from '@nestjs/passport';
 import { PostsService } from './posts.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
+
+type UploadedImage = {
+  buffer: Buffer;
+  mimetype: string;
+};
 
 const postResponseSchema = {
   type: 'object',
@@ -47,6 +51,7 @@ const postResponseSchema = {
       items: {
         type: 'object',
         properties: {
+          _id: { type: 'string' },
           userId: { type: 'string' },
           userName: { type: 'string', nullable: true },
           userProfileImageUrl: { type: 'string', nullable: true },
@@ -177,6 +182,7 @@ export class PostsController {
       items: {
         type: 'object',
         properties: {
+          _id: { type: 'string' },
           userId: { type: 'string' },
           userName: { type: 'string', nullable: true },
           userProfileImageUrl: { type: 'string', nullable: true },
@@ -188,6 +194,44 @@ export class PostsController {
   })
   async getComments(@Param('id') id: string) {
     return this.postsService.getComments(id);
+  }
+
+  @Delete(':id/comments/:commentId')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Delete a comment from a post' })
+  @ApiResponse({
+    status: 200,
+    description: 'Updated post after comment removal',
+    schema: postResponseSchema,
+  })
+  @ApiResponse({ status: 403, description: 'Unauthorized' })
+  @ApiResponse({ status: 404, description: 'Post or comment not found' })
+  async deleteComment(
+    @Param('id') id: string,
+    @Param('commentId') commentId: string,
+    @Req() req,
+  ) {
+    return this.postsService.removeComment(id, commentId, req.user._id);
+  }
+
+  @Post(':id/comments/:commentId/delete')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Delete a comment from a post (POST alias)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Updated post after comment removal',
+    schema: postResponseSchema,
+  })
+  @ApiResponse({ status: 403, description: 'Unauthorized' })
+  @ApiResponse({ status: 404, description: 'Post or comment not found' })
+  async deleteCommentViaPost(
+    @Param('id') id: string,
+    @Param('commentId') commentId: string,
+    @Req() req,
+  ) {
+    return this.postsService.removeComment(id, commentId, req.user._id);
   }
 
   @Get('user/:userId')
@@ -262,7 +306,7 @@ export class PostsController {
   async create(
     @Body() createPostDto: CreatePostDto,
     @Req() req,
-    @UploadedFiles() images?: Express.Multer.File[],
+    @UploadedFiles() images?: UploadedImage[],
   ) {
     // Enforce authorId from token
     createPostDto.authorId = req.user._id;
@@ -320,7 +364,7 @@ export class PostsController {
     @Param('id') id: string,
     @Body() body: UpdatePostDto,
     @Req() req,
-    @UploadedFiles() images?: Express.Multer.File[],
+    @UploadedFiles() images?: UploadedImage[],
   ) {
     const files = images?.length
       ? images.map((image) => ({ buffer: image.buffer, mimetype: image.mimetype }))
