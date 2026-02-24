@@ -32,12 +32,12 @@ export class AiService {
 
     try {
       const model = this.genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
-      const prompt = `Analyze the following post and generate between 5 and 20 relevant topic tags.
-Return ONLY a JSON array of short tag strings (1 to 3 words each). No explanation, no markdown, just the raw JSON array.
-Aim for at least 5 tags that cover the main topics, themes, and concepts in the post.
+      const prompt = `Analyze the following post and generate between 5 and 30 relevant topic tags.
+Return ONLY a JSON array of lowercase tag strings (1 to 3 words each). No explanation, no markdown, just the raw JSON array.
+Cover the main topics, sub-topics, themes, concepts, and related fields — aim for variety so the post can be found through many different searches.
 IMPORTANT: Return tags in the SAME language as the post content. If the post is in Hebrew, return Hebrew tags. If in English, return English tags.
-Example for English: ["machine learning", "python", "data science"]
-Example for Hebrew: ["למידת מכונה", "פייתון", "מדע הנתונים"]
+Example for English: ["machine learning", "python", "data science", "neural networks", "ai", "programming", "algorithms", "statistics"]
+Example for Hebrew: ["למידת מכונה", "פייתון", "מדע הנתונים", "רשתות נוירונים", "בינה מלאכותית", "תכנות"]
 
 Post content: ${content}`;
 
@@ -46,7 +46,7 @@ Post content: ${content}`;
       const tags = JSON.parse(text) as string[];
 
       if (!Array.isArray(tags)) throw new Error('Response is not an array');
-      return tags.slice(0, 20).map((t) => t.toLowerCase().trim());
+      return tags.slice(0, 30).map((t) => t.toLowerCase().trim());
     } catch (error) {
       if (error instanceof Error && error.message.includes('429')) {
         this.logger.warn('Gemini daily quota exceeded — using keyword fallback for tags');
