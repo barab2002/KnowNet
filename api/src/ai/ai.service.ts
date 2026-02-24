@@ -24,7 +24,7 @@ export class AiService {
     }
 
     try {
-      const model = this.genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      const model = this.genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
       const prompt = `Analyze the following post and generate between 5 and 20 relevant topic tags.
 Return ONLY a JSON array of short, lowercase tag strings (1 to 3 words each). No explanation, no markdown, just the raw JSON array.
 Aim for at least 5 tags that cover the main topics, themes, and concepts in the post.
@@ -39,6 +39,11 @@ Post content: ${content}`;
       if (!Array.isArray(tags)) throw new Error('Response is not an array');
       return tags.slice(0, 20).map((t) => t.toLowerCase().trim());
     } catch (error) {
+      const isQuotaError = error instanceof Error && error.message.includes('429');
+      if (isQuotaError) {
+        this.logger.warn('Gemini quota exceeded — falling back to keyword extraction');
+        throw new Error('AI_QUOTA_EXCEEDED');
+      }
       this.logger.error('Failed to generate tags with Gemini', error);
       return this.extractKeywordsFallback(content);
     }
@@ -50,7 +55,7 @@ Post content: ${content}`;
     }
 
     try {
-      const model = this.genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      const model = this.genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
       const prompt = `Given this search query, generate 10 to 20 relevant topic tags that would help find related posts.
 Return ONLY a JSON array of short, lowercase tag strings (1 to 3 words each). No explanation, no markdown, just the raw JSON array.
 Example: for "how to study better" return ["study tips", "studying", "learning", "focus", "productivity", "academic", "exam prep", "time management", "memory", "concentration"]
@@ -110,7 +115,7 @@ Search query: ${query}`;
         `Generating summary for content length: ${content.length} (Server Key)`,
       );
       const model = this.genAI.getGenerativeModel({
-        model: 'gemini-1.5-flash',
+        model: 'gemini-2.0-flash',
       });
       const prompt = `You are a helpful assistant. Please provide a concise, one-sentence summary of the following content: ${content}`;
 

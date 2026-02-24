@@ -21,6 +21,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
   const [postText, setPostText] = useState('');
   const [images, setImages] = useState<File[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [aiWarning, setAiWarning] = useState(false);
 
   const defaultAvatar =
     'https://lh3.googleusercontent.com/aida-public/AB6AXuCvtexDhPhar8YHNlSTSnW4u-Cr6-wLTamZ6XqrJcCGbnv8HsimarRRtRyBOXOivrORYRp5w4dPCWMc7KGnm8X9k3kPAXU9d6G4gN-ayhLHw5yHnG5Mh4wYJRpprIH9Rm8Q56nNjDmxPmfrhn5OkejcNpGBpQHyRZNnCYuEozb0BKzo27GFFl5ZPMAKFtOY3Kybd8KWCrsbCGJYc977RMJ4LdWMuB3NpS4jMZy4Vl058nKZE5lgpsUsafPMMG57ba5uOyNwIkIKMg';
@@ -31,7 +32,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
 
     try {
       setIsLoading(true);
-      await createPost(
+      const result = await createPost(
         {
           content: postText,
           authorId: user?._id,
@@ -40,6 +41,10 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
       );
       setPostText('');
       setImages([]);
+      if ((result as any).aiQuotaExceeded) {
+        setAiWarning(true);
+        setTimeout(() => setAiWarning(false), 6000);
+      }
       if (onSuccess) onSuccess();
     } catch (error) {
       console.error('Failed to create post:', error);
@@ -114,6 +119,14 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* AI Quota Warning */}
+        {aiWarning && (
+          <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg px-4 py-2 text-sm">
+            <span className="material-symbols-outlined text-base">warning</span>
+            AI quota exceeded — post saved without tags. Try again tomorrow.
           </div>
         )}
 
