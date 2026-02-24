@@ -241,7 +241,13 @@ export const SemanticSearchPage = () => {
             <span className="material-symbols-outlined text-[18px]">close</span>
             Close
           </button>
-          <PostCard post={selectedPost} onUpdate={() => setSelectedPost(null)} />
+          <PostCard
+            post={selectedPost}
+            onUpdate={() => {
+              setResults((prev) => prev.filter((p) => p._id !== selectedPost._id));
+              setSelectedPost(null);
+            }}
+          />
         </div>
       </div>,
       document.body
