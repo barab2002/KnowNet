@@ -16,12 +16,17 @@ import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app/app.module';
+import cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const globalPrefix = 'api';
   app.setGlobalPrefix(globalPrefix);
-  app.enableCors();
+  app.enableCors({
+    origin: process.env.FRONTEND_URL || 'http://localhost:4200',
+    credentials: true,
+  });
+  app.use(cookieParser());
 
   // Serve static files from uploads directory
   app.useStaticAssets(join(__dirname, '..', 'uploads'), {
@@ -33,6 +38,7 @@ async function bootstrap() {
     .setTitle('KnowNet API')
     .setDescription('The KnowNet API documentation')
     .setVersion('1.0')
+    .addBearerAuth()
     .addTag('health', 'Health check endpoints')
     .addTag('posts', 'Posts management endpoints')
     .build();
