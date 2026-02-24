@@ -187,6 +187,7 @@ export class PostsController {
       properties: {
         content: { type: 'string', example: 'Updated post content' },
         image: { type: 'string', format: 'binary' },
+        removeImage: { type: 'boolean', example: true },
       },
     },
   })
@@ -202,6 +203,7 @@ export class PostsController {
       body.content,
       image?.buffer,
       image?.mimetype,
+      body.removeImage,
     );
   }
 
