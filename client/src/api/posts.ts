@@ -148,16 +148,16 @@ export const updatePost = async (
   postId: string,
   data: UpdatePostDto,
   image?: File,
+  token?: string | null,
 ): Promise<Post> => {
+  const authHeader =
+    token || (axios.defaults.headers.common?.Authorization as string | undefined);
   if (image) {
     const formData = new FormData();
     if (data.content) {
       formData.append('content', data.content);
     }
     formData.append('image', image);
-    const authHeader = axios.defaults.headers.common?.Authorization as
-      | string
-      | undefined;
     const response = await axios.patch<Post>(`${API_URL}/${postId}`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
@@ -167,6 +167,8 @@ export const updatePost = async (
     return response.data;
   }
 
-  const response = await axios.patch<Post>(`${API_URL}/${postId}`, data);
+  const response = await axios.patch<Post>(`${API_URL}/${postId}`, data, {
+    headers: authHeader ? { Authorization: authHeader } : undefined,
+  });
   return response.data;
 };
