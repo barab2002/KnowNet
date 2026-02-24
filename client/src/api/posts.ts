@@ -100,6 +100,15 @@ export const addComment = async (
   return response.data;
 };
 
+export const getComments = async (
+  postId: string,
+): Promise<Post['comments']> => {
+  const response = await axios.get<Post['comments']>(
+    `${API_URL}/${postId}/comments`,
+  );
+  return response.data;
+};
+
 export const getMyPosts = async (
   userId: string = 'current-user-id',
 ): Promise<Post[]> => {
