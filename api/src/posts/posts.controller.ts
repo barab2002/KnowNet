@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
   Body,
   Param,
   Delete,
@@ -17,6 +18,7 @@ import { ApiBearerAuth, ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nes
 import { AuthGuard } from '@nestjs/passport';
 import { PostsService } from './posts.service';
 import { CreatePostDto } from './dto/create-post.dto';
+import { UpdatePostDto } from './dto/update-post.dto';
 
 @ApiTags('posts')
 @Controller('posts')
@@ -164,6 +166,19 @@ export class PostsController {
     @Query('skip') skip: number = 0,
   ) {
     return this.postsService.findAll(Number(limit), Number(skip));
+  }
+
+  @Patch(':id')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update post text (author only)' })
+  @ApiBody({ type: UpdatePostDto })
+  async updateContent(
+    @Param('id') id: string,
+    @Body() body: UpdatePostDto,
+    @Req() req,
+  ) {
+    return this.postsService.updatePostContent(id, req.user._id, body.content);
   }
 
   @Delete(':id')
