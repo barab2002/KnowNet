@@ -31,6 +31,7 @@ export interface CreatePostDto {
 export interface UpdatePostDto {
   content?: string;
   removeImage?: boolean;
+  removeImageUrls?: string[];
 }
 
 // In development, Vite will proxy /api to http://localhost:3000
@@ -49,15 +50,15 @@ export const getPosts = async (
 
 export const createPost = async (
   data: CreatePostDto,
-  image?: File,
+  images?: File[],
 ): Promise<Post> => {
-  if (image) {
+  if (images && images.length > 0) {
     const formData = new FormData();
     formData.append('content', data.content);
     if (data.authorId) {
       formData.append('authorId', data.authorId);
     }
-    formData.append('image', image);
+    images.forEach((image) => formData.append('images', image));
     const response = await axios.post<Post>(API_URL, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
@@ -149,7 +150,7 @@ export const deletePost = async (
 export const updatePost = async (
   postId: string,
   data: UpdatePostDto,
-  image?: File,
+  images?: File[],
   token?: string | null,
 ): Promise<Post> => {
   const rawToken =
@@ -159,7 +160,7 @@ export const updatePost = async (
       ? rawToken
       : `Bearer ${rawToken}`
     : undefined;
-  if (image) {
+  if ((images && images.length > 0) || data.removeImageUrls?.length) {
     const formData = new FormData();
     if (data.content) {
       formData.append('content', data.content);
@@ -167,7 +168,14 @@ export const updatePost = async (
     if (data.removeImage) {
       formData.append('removeImage', 'true');
     }
-    formData.append('image', image);
+    if (data.removeImageUrls?.length) {
+      data.removeImageUrls.forEach((url) =>
+        formData.append('removeImageUrls', url),
+      );
+    }
+    if (images && images.length > 0) {
+      images.forEach((image) => formData.append('images', image));
+    }
     const response = await axios.patch<Post>(`${API_URL}/${postId}`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
