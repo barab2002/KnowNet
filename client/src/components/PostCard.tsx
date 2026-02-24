@@ -4,6 +4,7 @@ import {
   toggleLike,
   toggleSave,
   addComment,
+  getComments,
   summarizePost,
   deletePost,
   updatePost,
@@ -23,6 +24,9 @@ export const PostCard = React.memo(
   // We'll use local state for immediate feedback but rely on props for source of truth
   const [commentText, setCommentText] = useState('');
   const [showComments, setShowComments] = useState(false);
+  const [comments, setComments] = useState<Post['comments']>([]);
+  const [commentsLoaded, setCommentsLoaded] = useState(false);
+  const [isLoadingComments, setIsLoadingComments] = useState(false);
   const [isSummarizing, setIsSummarizing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Use local state for optimistic/immediate updates, sync with prop
@@ -36,6 +40,8 @@ export const PostCard = React.memo(
   React.useEffect(() => {
     setLocalPost(post);
     setLocalSummary(post.summary);
+    setCommentsLoaded(false);
+    setComments([]);
   }, [post]);
 
   const { user, token } = useAuth();
@@ -106,9 +112,28 @@ export const PostCard = React.memo(
     try {
       const updatedPost = await addComment(post._id, commentText, currentUserId);
       setLocalPost(updatedPost);
+      setComments(updatedPost.comments || []);
+      setCommentsLoaded(true);
       setCommentText('');
     } catch (err) {
       console.error('Failed to add comment', err);
+    }
+  };
+
+  const handleToggleComments = async () => {
+    const next = !showComments;
+    setShowComments(next);
+    if (next && !commentsLoaded) {
+      try {
+        setIsLoadingComments(true);
+        const fetched = await getComments(post._id);
+        setComments(fetched || []);
+        setCommentsLoaded(true);
+      } catch (err) {
+        console.error('Failed to load comments', err);
+      } finally {
+        setIsLoadingComments(false);
+      }
     }
   };
 
@@ -333,7 +358,7 @@ export const PostCard = React.memo(
               </span>
             </button>
             <button
-              onClick={() => setShowComments(!showComments)}
+              onClick={handleToggleComments}
               className="flex items-center gap-1.5 text-slate-500 hover:text-primary transition-colors"
             >
               <span className="material-icons-round text-lg">
@@ -376,7 +401,12 @@ export const PostCard = React.memo(
           {showComments && (
             <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 animate-in slide-in-from-top-2">
               <div className="space-y-3 mb-4 max-h-60 overflow-y-auto">
-                {localPost.comments.map((comment, idx) => {
+                {isLoadingComments && (
+                  <p className="text-xs text-slate-400 italic">
+                    Loading comments...
+                  </p>
+                )}
+                {!isLoadingComments && comments.map((comment, idx) => {
                   const commentName =
                     comment.userName ||
                     (comment.userId === currentUserId
@@ -428,7 +458,7 @@ export const PostCard = React.memo(
                     </div>
                   );
                 })}
-                {localPost.comments.length === 0 && (
+                {!isLoadingComments && comments.length === 0 && (
                   <p className="text-xs text-slate-400 italic">
                     No comments yet.
                   </p>
