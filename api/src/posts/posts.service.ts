@@ -306,79 +306,46 @@ export class PostsService {
       this.aiService.expandSearchQuery(query),
     ]);
 
-    const useVectorSearch = queryEmbedding.length > 0;
+    // Per-word regexes for partial content matching (handles "study tips" → matches posts with "study" OR "tips")
+    const queryWords = query.toLowerCase().split(/\s+/).filter((w) => w.length > 1);
+    const wordRegexes = queryWords.map(
+      (w) => new RegExp(w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'iu'),
+    );
 
-    if (useVectorSearch) {
-      // Vector search: load posts that have embeddings, rank by cosine similarity
-      const embeddedPosts = await this.postModel
-        .find({ embedding: { $exists: true, $not: { $size: 0 } } })
-        .select('+embedding')
-        .populate('authorId', 'name profileImageUrl')
-        .lean()
-        .exec();
+    // Load ALL posts with embeddings included (empty array for posts that don't have one yet)
+    const allPosts = await this.postModel
+      .find({})
+      .select('+embedding')
+      .populate('authorId', 'name profileImageUrl')
+      .lean()
+      .exec();
 
-      const scored = embeddedPosts
-        .map((post) => ({
-          ...post,
-          _score: this.cosineSimilarity(queryEmbedding, post.embedding as unknown as number[]),
-          matchedTags: (post.tags as string[]).filter((tag) => expandedTags.includes(tag)),
-        }))
-        .filter((p) => p._score > 0.5) // relevance threshold
-        .sort((a, b) => b._score - a._score);
+    const scored = allPosts.map((post) => {
+      // Signal 1: vector cosine similarity (0–1), strongest signal when available
+      const postEmbedding = post.embedding as unknown as number[] | undefined;
+      const vectorScore =
+        queryEmbedding.length && postEmbedding?.length
+          ? this.cosineSimilarity(queryEmbedding, postEmbedding)
+          : 0;
 
-      // Also include non-embedded posts matched by tags (backward compat for older posts)
-      const embeddedIds = new Set(scored.map((p) => (p._id as { toString(): string }).toString()));
-      const tagPosts = expandedTags.length
-        ? await this.postModel
-            .find({ tags: { $in: expandedTags } })
-            .populate('authorId', 'name profileImageUrl')
-            .lean()
-            .exec()
-        : [];
+      // Signal 2: how many AI-expanded tags match this post's tags (normalized 0–1)
+      const matchedTags = (post.tags as string[]).filter((t) => expandedTags.includes(t));
+      const tagScore = expandedTags.length ? matchedTags.length / expandedTags.length : 0;
 
-      const tagOnly = tagPosts
-        .filter((p) => !embeddedIds.has((p._id as { toString(): string }).toString()))
-        .map((post) => ({
-          ...post,
-          _score: 0,
-          matchedTags: (post.tags as string[]).filter((tag) => expandedTags.includes(tag)),
-        }));
+      // Signal 3: fraction of query words that appear in content (0–1)
+      const contentMatchCount = wordRegexes.filter((r) => r.test(post.content as string)).length;
+      const contentScore = wordRegexes.length ? contentMatchCount / wordRegexes.length : 0;
 
-      return { expandedTags, results: [...scored, ...tagOnly] };
-    }
+      // Combined: vector beats everything, tags and content fill in for unembedded posts
+      const combinedScore =
+        Math.max(vectorScore, tagScore * 0.75) + contentScore * 0.3;
 
-    // Fallback: tag-based search + regex content search (allSettled so one failure doesn't kill the other)
-    const regex = new RegExp(query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'iu');
-    const [tagResult, contentResult] = await Promise.allSettled([
-      this.postModel
-        .find({ tags: { $in: expandedTags } })
-        .populate('authorId', 'name profileImageUrl')
-        .lean()
-        .exec(),
-      this.postModel
-        .find({ content: { $regex: regex } })
-        .populate('authorId', 'name profileImageUrl')
-        .lean()
-        .exec(),
-    ]);
-
-    const tagPosts = tagResult.status === 'fulfilled' ? tagResult.value : [];
-    const contentPosts = contentResult.status === 'fulfilled' ? contentResult.value : [];
-
-    const seen = new Set<string>();
-    const merged = [...tagPosts, ...contentPosts].filter((post) => {
-      const id = (post._id as { toString(): string }).toString();
-      if (seen.has(id)) return false;
-      seen.add(id);
-      return true;
+      return { ...post, _score: combinedScore, matchedTags };
     });
 
-    const results = merged
-      .map((post) => ({
-        ...post,
-        matchedTags: (post.tags as string[]).filter((tag) => expandedTags.includes(tag)),
-      }))
-      .sort((a, b) => b.matchedTags.length - a.matchedTags.length);
+    const results = scored
+      .filter((p) => p._score > 0.1) // drop clearly irrelevant posts
+      .sort((a, b) => b._score - a._score);
 
     return { expandedTags, results };
   }

@@ -65,11 +65,12 @@ Post content: ${content}`;
 
     try {
       const model = this.genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
-      const prompt = `Given this search query, generate 10 to 20 relevant topic tags that would help find related posts.
-Return ONLY a JSON array of short tag strings (1 to 3 words each). No explanation, no markdown, just the raw JSON array.
+      const prompt = `Given this search query, generate 15 to 25 relevant topic tags that would help find related posts in a student knowledge-sharing app.
+Include BOTH broad concepts AND specific terms. Prefer short 1-2 word tags over long phrases, since tags on posts are usually short.
+Return ONLY a JSON array of lowercase tag strings. No explanation, no markdown, just the raw JSON array.
 IMPORTANT: Return tags in the SAME language as the search query. If the query is in Hebrew, return Hebrew tags.
-Example for English: ["study tips", "learning", "focus", "productivity", "exam prep"]
-Example for Hebrew: ["טיפים ללימוד", "למידה", "ריכוז", "פרודוקטיביות", "הכנה לבחינות"]
+Example for English: ["study", "studying", "study tips", "learning", "focus", "productivity", "exam", "exam prep", "notes", "homework"]
+Example for Hebrew: ["לימוד", "טיפים ללימוד", "מבחנים", "ריכוז", "פרודוקטיביות", "שיעורי בית"]
 
 Search query: ${query}`;
 
