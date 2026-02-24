@@ -33,9 +33,11 @@ export class AiService {
     try {
       const model = this.genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
       const prompt = `Analyze the following post and generate between 5 and 20 relevant topic tags.
-Return ONLY a JSON array of short, lowercase tag strings (1 to 3 words each). No explanation, no markdown, just the raw JSON array.
+Return ONLY a JSON array of short tag strings (1 to 3 words each). No explanation, no markdown, just the raw JSON array.
 Aim for at least 5 tags that cover the main topics, themes, and concepts in the post.
-Example: ["machine learning", "python", "data science", "neural networks", "deep learning"]
+IMPORTANT: Return tags in the SAME language as the post content. If the post is in Hebrew, return Hebrew tags. If in English, return English tags.
+Example for English: ["machine learning", "python", "data science"]
+Example for Hebrew: ["למידת מכונה", "פייתון", "מדע הנתונים"]
 
 Post content: ${content}`;
 
@@ -64,8 +66,10 @@ Post content: ${content}`;
     try {
       const model = this.genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
       const prompt = `Given this search query, generate 10 to 20 relevant topic tags that would help find related posts.
-Return ONLY a JSON array of short, lowercase tag strings (1 to 3 words each). No explanation, no markdown, just the raw JSON array.
-Example: for "how to study better" return ["study tips", "studying", "learning", "focus", "productivity", "academic", "exam prep", "time management", "memory", "concentration"]
+Return ONLY a JSON array of short tag strings (1 to 3 words each). No explanation, no markdown, just the raw JSON array.
+IMPORTANT: Return tags in the SAME language as the search query. If the query is in Hebrew, return Hebrew tags.
+Example for English: ["study tips", "learning", "focus", "productivity", "exam prep"]
+Example for Hebrew: ["טיפים ללימוד", "למידה", "ריכוז", "פרודוקטיביות", "הכנה לבחינות"]
 
 Search query: ${query}`;
 
@@ -77,7 +81,7 @@ Search query: ${query}`;
       return tags.slice(0, 20).map((t) => t.toLowerCase().trim());
     } catch (error) {
       this.logger.error('Failed to expand search query with Gemini', error);
-      return query.toLowerCase().split(/\s+/).filter((w) => w.length > 2);
+      return query.split(/\s+/).filter((w) => w.length > 1);
     }
   }
 
@@ -89,9 +93,9 @@ Search query: ${query}`;
     ]);
     const words = content
       .toLowerCase()
-      .replace(/[^\w\s]/g, '')
+      .replace(/[^\p{L}\s]/gu, '') // \p{L} matches any Unicode letter including Hebrew
       .split(/\s+/)
-      .filter((w) => w.length > 4 && !stopWords.has(w));
+      .filter((w) => w.length > 2 && !stopWords.has(w));
     return [...new Set(words)].slice(0, 5);
   }
 
