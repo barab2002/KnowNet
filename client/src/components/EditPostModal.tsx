@@ -65,7 +65,7 @@ export const EditPostModal: React.FC<EditPostModalProps> = ({
             dir="auto"
           />
           <div className="mt-1 text-xs text-slate-400 flex justify-between">
-            <span>Editing only updates the text</span>
+            <span>Editing updates text and image</span>
             <span>{trimmed.length} chars</span>
           </div>
         </div>
