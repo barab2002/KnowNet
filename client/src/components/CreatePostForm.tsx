@@ -41,8 +41,6 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
       setPostText('');
       setImages([]);
       if (onSuccess) onSuccess();
-      // Refresh again after AI finishes tagging in the background
-      setTimeout(() => { if (onSuccess) onSuccess(); }, 8000);
     } catch (error) {
       console.error('Failed to create post:', error);
       alert('Failed to submit post');
