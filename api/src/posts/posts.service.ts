@@ -328,17 +328,25 @@ export class PostsService {
           ? this.cosineSimilarity(queryEmbedding, postEmbedding)
           : 0;
 
-      // Signal 2: how many AI-expanded tags match this post's tags (normalized 0–1)
+      // Signal 2: tag matching — reward any match regardless of how many tags were expanded.
+      // Old formula (matchedTags/expandedTags) punished single matches in large expanded sets.
+      // New: 1 match = 0.5, 2 = 0.7, 3 = 0.85, 4+ ≈ 1.0  (logarithmic)
       const matchedTags = (post.tags as string[]).filter((t) => expandedTags.includes(t));
-      const tagScore = expandedTags.length ? matchedTags.length / expandedTags.length : 0;
+      const tagScore =
+        matchedTags.length > 0
+          ? Math.min(0.5 + Math.log2(matchedTags.length + 1) * 0.3, 1.0)
+          : 0;
 
-      // Signal 3: fraction of query words that appear in content (0–1)
-      const contentMatchCount = wordRegexes.filter((r) => r.test(post.content as string)).length;
+      // Signal 3: fraction of query words that appear in content OR tags (0–1)
+      // Checking tags too handles: query="math", post has tag="geometry" but word "math" not in content
+      const postTagText = (post.tags as string[]).join(' ');
+      const searchableText = `${post.content as string} ${postTagText}`;
+      const contentMatchCount = wordRegexes.filter((r) => r.test(searchableText)).length;
       const contentScore = wordRegexes.length ? contentMatchCount / wordRegexes.length : 0;
 
       // Combined: vector beats everything, tags and content fill in for unembedded posts
       const combinedScore =
-        Math.max(vectorScore, tagScore * 0.75) + contentScore * 0.3;
+        Math.max(vectorScore, tagScore * 0.85) + contentScore * 0.3;
 
       return { ...post, _score: combinedScore, matchedTags };
     });
