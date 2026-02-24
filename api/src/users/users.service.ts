@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { User, UserDocument } from './schemas/user.schema';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 
@@ -42,6 +42,90 @@ export class UsersService {
       throw new NotFoundException(`User with ID ${userId} not found`);
     }
     return user;
+  }
+
+  async findByEmail(email: string): Promise<User | null> {
+    return this.userModel.findOne({ email }).exec();
+  }
+
+  async createLocalUser(
+    email: string,
+    name: string,
+    passwordHash: string,
+  ): Promise<User> {
+    const user = new this.userModel({
+      _id: new Types.ObjectId().toString(),
+      email,
+      name,
+      passwordHash,
+    });
+    await user.save();
+    return user;
+  }
+
+  async findByRefreshToken(token: string): Promise<User | null> {
+    return this.userModel
+      .findOne({ 'refreshTokens.token': token })
+      .exec();
+  }
+
+  async addRefreshToken(userId: string, token: string, expiresAt: Date) {
+    return this.userModel.findByIdAndUpdate(
+      userId,
+      {
+        $push: {
+          refreshTokens: {
+            token,
+            createdAt: new Date(),
+            expiresAt,
+            revoked: false,
+          },
+        },
+      },
+      { new: true },
+    );
+  }
+
+  async rotateRefreshToken(
+    userId: string,
+    oldToken: string,
+    newToken: string,
+    newExpiresAt: Date,
+  ) {
+    return this.userModel.findOneAndUpdate(
+      { _id: userId, 'refreshTokens.token': oldToken },
+      {
+        $set: {
+          'refreshTokens.$.revoked': true,
+          'refreshTokens.$.replacedByToken': newToken,
+        },
+        $push: {
+          refreshTokens: {
+            token: newToken,
+            createdAt: new Date(),
+            expiresAt: newExpiresAt,
+            revoked: false,
+          },
+        },
+      },
+      { new: true },
+    );
+  }
+
+  async revokeRefreshToken(userId: string, token: string) {
+    return this.userModel.findOneAndUpdate(
+      { _id: userId, 'refreshTokens.token': token },
+      { $set: { 'refreshTokens.$.revoked': true } },
+      { new: true },
+    );
+  }
+
+  async revokeAllRefreshTokens(userId: string) {
+    return this.userModel.findByIdAndUpdate(
+      userId,
+      { $set: { 'refreshTokens.$[].revoked': true } },
+      { new: true },
+    );
   }
 
   async updateProfile(
