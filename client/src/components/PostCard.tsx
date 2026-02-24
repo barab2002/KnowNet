@@ -5,6 +5,7 @@ import {
   toggleSave,
   addComment,
   getComments,
+  deleteComment,
   summarizePost,
   deletePost,
   updatePost,
@@ -117,6 +118,18 @@ export const PostCard = React.memo(
       setCommentText('');
     } catch (err) {
       console.error('Failed to add comment', err);
+    }
+  };
+
+  const handleDeleteComment = async (commentId?: string) => {
+    if (!commentId) return;
+    try {
+      const updatedPost = await deleteComment(post._id, commentId, token);
+      setLocalPost(updatedPost);
+      setComments(updatedPost.comments || []);
+      setCommentsLoaded(true);
+    } catch (err) {
+      console.error('Failed to delete comment', err);
     }
   };
 
@@ -417,6 +430,9 @@ export const PostCard = React.memo(
                     (comment.userId === currentUserId
                       ? user?.profileImageUrl
                       : undefined);
+                  const canDeleteComment =
+                    comment.userId === currentUserId ||
+                    authorIdStr === currentUserId;
 
                   return (
                     <div
@@ -443,9 +459,23 @@ export const PostCard = React.memo(
                             <span className="font-bold text-xs text-slate-700 dark:text-slate-200">
                               {commentName}
                             </span>
-                            <span className="text-[11px] text-slate-400">
-                              {new Date(comment.createdAt).toLocaleDateString()}
-                            </span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-[11px] text-slate-400">
+                                {new Date(comment.createdAt).toLocaleDateString()}
+                              </span>
+                              {canDeleteComment && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteComment(comment._id)}
+                                  className="text-slate-400 hover:text-red-500 transition-colors"
+                                  title="Delete comment"
+                                >
+                                  <span className="material-icons-round text-sm">
+                                    delete_outline
+                                  </span>
+                                </button>
+                              )}
+                            </div>
                           </div>
                           <p
                             className="text-slate-800 dark:text-slate-200 mt-1"

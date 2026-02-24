@@ -15,6 +15,7 @@ export interface Post {
   aiTags?: string[];
   savedBy: string[];
   comments: {
+    _id?: string;
     userId: string;
     userName?: string;
     userProfileImageUrl?: string;
@@ -105,6 +106,28 @@ export const getComments = async (
 ): Promise<Post['comments']> => {
   const response = await axios.get<Post['comments']>(
     `${API_URL}/${postId}/comments`,
+  );
+  return response.data;
+};
+
+export const deleteComment = async (
+  postId: string,
+  commentId: string,
+  token?: string | null,
+): Promise<Post> => {
+  const rawToken =
+    token || (axios.defaults.headers.common?.Authorization as string | undefined);
+  const authHeader = rawToken
+    ? rawToken.startsWith('Bearer ')
+      ? rawToken
+      : `Bearer ${rawToken}`
+    : undefined;
+  const response = await axios.post<Post>(
+    `${API_URL}/${postId}/comments/${commentId}/delete`,
+    {},
+    {
+      headers: authHeader ? { Authorization: authHeader } : undefined,
+    },
   );
   return response.data;
 };

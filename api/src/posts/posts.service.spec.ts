@@ -5,7 +5,7 @@ import { Post } from './schemas/post.schema';
 import { UsersService } from '../users/users.service';
 import { AiService } from '../ai/ai.service';
 import { CreatePostDto } from './dto/create-post.dto';
-import { NotFoundException } from '@nestjs/common';
+import { ForbiddenException, NotFoundException } from '@nestjs/common';
 
 describe('PostsService', () => {
   let service: PostsService;
@@ -357,6 +357,66 @@ describe('PostsService', () => {
       await expect(service.delete('post1', 'u2')).rejects.toThrow(
         'Unauthorized',
       );
+    });
+  });
+
+  describe('removeComment', () => {
+    it('should remove comment when comment author', async () => {
+      const comment = { _id: 'c1', userId: 'u2' };
+      const post = {
+        ...mockPost,
+        authorId: 'u1',
+        comments: [comment],
+        save: mockSave,
+      };
+      mockSave.mockResolvedValue(post);
+      MockPostModel.findById.mockResolvedValue(post);
+
+      const result = await service.removeComment('post1', 'c1', 'u2');
+      expect(result).toBe(post);
+      expect(post.comments).toHaveLength(0);
+      expect(mockSave).toHaveBeenCalled();
+    });
+
+    it('should remove comment when post author', async () => {
+      const comment = { _id: 'c1', userId: 'u2' };
+      const post = {
+        ...mockPost,
+        authorId: 'u1',
+        comments: [comment],
+        save: mockSave,
+      };
+      mockSave.mockResolvedValue(post);
+      MockPostModel.findById.mockResolvedValue(post);
+
+      const result = await service.removeComment('post1', 'c1', 'u1');
+      expect(result).toBe(post);
+      expect(post.comments).toHaveLength(0);
+    });
+
+    it('should throw if post not found', async () => {
+      MockPostModel.findById.mockResolvedValue(null);
+      await expect(
+        service.removeComment('post1', 'c1', 'u1'),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw if comment not found', async () => {
+      const post = { ...mockPost, comments: [], save: mockSave };
+      MockPostModel.findById.mockResolvedValue(post);
+      await expect(
+        service.removeComment('post1', 'missing', 'u1'),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw if unauthorized', async () => {
+      const comment = { _id: 'c1', userId: 'u2' };
+      const post = { ...mockPost, authorId: 'u1', comments: [comment] };
+      MockPostModel.findById.mockResolvedValue(post);
+
+      await expect(
+        service.removeComment('post1', 'c1', 'u3'),
+      ).rejects.toThrow(ForbiddenException);
     });
   });
 });
