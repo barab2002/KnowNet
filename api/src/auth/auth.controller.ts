@@ -9,7 +9,13 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { ApiBearerAuth, ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { FirebaseService } from './firebase.service';
 import { LoginDto } from './dto/login.dto';
@@ -26,6 +32,26 @@ export class AuthController {
 
   @Post('firebase')
   @ApiOperation({ summary: 'Login with Firebase ID token' })
+  @ApiResponse({
+    status: 200,
+    description: 'Login successful',
+    schema: {
+      type: 'object',
+      properties: {
+        accessToken: { type: 'string', example: 'jwt.access.token' },
+        user: {
+          type: 'object',
+          properties: {
+            _id: { type: 'string', example: 'user-123' },
+            email: { type: 'string', example: 'user@example.com' },
+            name: { type: 'string', example: 'Jane Doe' },
+            profileImageUrl: { type: 'string', nullable: true },
+          },
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: 'Invalid Firebase token' })
   @ApiBody({
     schema: {
       type: 'object',
@@ -56,6 +82,26 @@ export class AuthController {
   @Post('register')
   @ApiOperation({ summary: 'Register with email/password' })
   @ApiBody({ type: RegisterDto })
+  @ApiResponse({
+    status: 201,
+    description: 'Registration successful',
+    schema: {
+      type: 'object',
+      properties: {
+        accessToken: { type: 'string', example: 'jwt.access.token' },
+        user: {
+          type: 'object',
+          properties: {
+            _id: { type: 'string', example: 'user-123' },
+            email: { type: 'string', example: 'user@example.com' },
+            name: { type: 'string', example: 'Jane Doe' },
+            profileImageUrl: { type: 'string', nullable: true },
+          },
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 409, description: 'User already registered' })
   async register(
     @Body() body: RegisterDto,
     @Res({ passthrough: true }) res: Response,
@@ -75,6 +121,26 @@ export class AuthController {
   @Post('login')
   @ApiOperation({ summary: 'Login with email/password' })
   @ApiBody({ type: LoginDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Login successful',
+    schema: {
+      type: 'object',
+      properties: {
+        accessToken: { type: 'string', example: 'jwt.access.token' },
+        user: {
+          type: 'object',
+          properties: {
+            _id: { type: 'string', example: 'user-123' },
+            email: { type: 'string', example: 'user@example.com' },
+            name: { type: 'string', example: 'Jane Doe' },
+            profileImageUrl: { type: 'string', nullable: true },
+          },
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: 'Invalid credentials' })
   async login(
     @Body() body: LoginDto,
     @Res({ passthrough: true }) res: Response,
@@ -92,6 +158,26 @@ export class AuthController {
 
   @Post('refresh')
   @ApiOperation({ summary: 'Refresh access token (uses refresh cookie)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Token refreshed',
+    schema: {
+      type: 'object',
+      properties: {
+        accessToken: { type: 'string', example: 'jwt.access.token' },
+        user: {
+          type: 'object',
+          properties: {
+            _id: { type: 'string', example: 'user-123' },
+            email: { type: 'string', example: 'user@example.com' },
+            name: { type: 'string', example: 'Jane Doe' },
+            profileImageUrl: { type: 'string', nullable: true },
+          },
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: 'Invalid refresh token' })
   async refresh(
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
@@ -107,6 +193,16 @@ export class AuthController {
 
   @Post('logout')
   @ApiOperation({ summary: 'Logout (revokes refresh token cookie)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Logged out',
+    schema: {
+      type: 'object',
+      properties: {
+        message: { type: 'string', example: 'Logged out' },
+      },
+    },
+  })
   async logout(
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
@@ -126,6 +222,21 @@ export class AuthController {
   @Get('profile')
   @UseGuards(AuthGuard('jwt'))
   @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get current user profile' })
+  @ApiResponse({
+    status: 200,
+    description: 'Current user profile',
+    schema: {
+      type: 'object',
+      properties: {
+        _id: { type: 'string', example: 'user-123' },
+        email: { type: 'string', example: 'user@example.com' },
+        name: { type: 'string', example: 'Jane Doe' },
+        profileImageUrl: { type: 'string', nullable: true },
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   getProfile(@Req() req) {
     return req.user;
   }

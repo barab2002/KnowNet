@@ -28,6 +28,38 @@ import { PostsService } from './posts.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 
+const postResponseSchema = {
+  type: 'object',
+  properties: {
+    _id: { type: 'string', example: 'post-123' },
+    content: { type: 'string', example: 'Post content' },
+    tags: { type: 'array', items: { type: 'string' } },
+    userTags: { type: 'array', items: { type: 'string' } },
+    aiTags: { type: 'array', items: { type: 'string' } },
+    summary: { type: 'string', nullable: true },
+    imageUrl: { type: 'string', nullable: true },
+    imageUrls: { type: 'array', items: { type: 'string' } },
+    authorId: { type: 'string', nullable: true },
+    likes: { type: 'array', items: { type: 'string' } },
+    savedBy: { type: 'array', items: { type: 'string' } },
+    comments: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          userId: { type: 'string' },
+          userName: { type: 'string', nullable: true },
+          userProfileImageUrl: { type: 'string', nullable: true },
+          content: { type: 'string' },
+          createdAt: { type: 'string', format: 'date-time' },
+        },
+      },
+    },
+    createdAt: { type: 'string', format: 'date-time' },
+    updatedAt: { type: 'string', format: 'date-time' },
+  },
+};
+
 @ApiTags('posts')
 @Controller('posts')
 export class PostsController {
@@ -35,12 +67,22 @@ export class PostsController {
 
   @Get('tags')
   @ApiOperation({ summary: 'Get all unique tags' })
+  @ApiResponse({
+    status: 200,
+    description: 'Unique tags list',
+    schema: { type: 'array', items: { type: 'string' } },
+  })
   async getTags() {
     return this.postsService.getUniqueTags();
   }
 
   @Get('search')
   @ApiOperation({ summary: 'Search posts by text' })
+  @ApiResponse({
+    status: 200,
+    description: 'Matching posts',
+    schema: { type: 'array', items: postResponseSchema },
+  })
   async search(@Query('q') query: string) {
     if (!query) {
       return [];
@@ -50,6 +92,11 @@ export class PostsController {
 
   @Post(':id/summarize')
   @ApiOperation({ summary: 'Generate AI summary for post' })
+  @ApiResponse({
+    status: 200,
+    description: 'Post with summary',
+    schema: postResponseSchema,
+  })
   async summarize(@Param('id') id: string) {
     try {
       return await this.postsService.summarizePost(id);
@@ -61,6 +108,11 @@ export class PostsController {
 
   @Post(':id/like')
   @ApiOperation({ summary: 'Toggle like on post' })
+  @ApiResponse({
+    status: 200,
+    description: 'Updated post',
+    schema: postResponseSchema,
+  })
   @ApiBody({
     schema: {
       type: 'object',
@@ -74,6 +126,11 @@ export class PostsController {
 
   @Post(':id/save')
   @ApiOperation({ summary: 'Toggle save post' })
+  @ApiResponse({
+    status: 200,
+    description: 'Updated post',
+    schema: postResponseSchema,
+  })
   @ApiBody({
     schema: {
       type: 'object',
@@ -87,6 +144,11 @@ export class PostsController {
 
   @Post(':id/comment')
   @ApiOperation({ summary: 'Add comment to post' })
+  @ApiResponse({
+    status: 200,
+    description: 'Updated post with new comment',
+    schema: postResponseSchema,
+  })
   @ApiBody({
     schema: {
       type: 'object',
@@ -107,30 +169,72 @@ export class PostsController {
 
   @Get(':id/comments')
   @ApiOperation({ summary: 'Get all comments for a post' })
+  @ApiResponse({
+    status: 200,
+    description: 'Post comments list',
+    schema: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          userId: { type: 'string' },
+          userName: { type: 'string', nullable: true },
+          userProfileImageUrl: { type: 'string', nullable: true },
+          content: { type: 'string' },
+          createdAt: { type: 'string', format: 'date-time' },
+        },
+      },
+    },
+  })
   async getComments(@Param('id') id: string) {
     return this.postsService.getComments(id);
   }
 
   @Get('user/:userId')
   @ApiOperation({ summary: 'Get user posts (mocked to all for now)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Posts by user',
+    schema: { type: 'array', items: postResponseSchema },
+  })
   async getUserPosts(@Param('userId') userId: string) {
     return this.postsService.getPostsByUser(userId);
   }
 
   @Get('liked/:userId')
   @ApiOperation({ summary: 'Get liked posts by user' })
+  @ApiResponse({
+    status: 200,
+    description: 'Liked posts',
+    schema: { type: 'array', items: postResponseSchema },
+  })
   async getLikedPosts(@Param('userId') userId: string) {
     return this.postsService.getLikedPosts(userId);
   }
 
   @Get('saved/:userId')
   @ApiOperation({ summary: 'Get saved posts by user' })
+  @ApiResponse({
+    status: 200,
+    description: 'Saved posts',
+    schema: { type: 'array', items: postResponseSchema },
+  })
   async getSavedPosts(@Param('userId') userId: string) {
     return this.postsService.getSavedPosts(userId);
   }
 
   @Get('user/:userId/total-likes')
   @ApiOperation({ summary: 'Get total likes received by user' })
+  @ApiResponse({
+    status: 200,
+    description: 'Total likes count',
+    schema: {
+      type: 'object',
+      properties: {
+        totalLikes: { type: 'number', example: 42 },
+      },
+    },
+  })
   async getTotalLikes(@Param('userId') userId: string) {
     return { totalLikes: await this.postsService.getTotalLikesForUser(userId) };
   }
@@ -153,6 +257,7 @@ export class PostsController {
   @ApiResponse({
     status: 201,
     description: 'The post has been successfully created.',
+    schema: postResponseSchema,
   })
   async create(
     @Body() createPostDto: CreatePostDto,
@@ -171,7 +276,17 @@ export class PostsController {
 
   @Get()
   @ApiOperation({ summary: 'Get all posts' })
-  @ApiResponse({ status: 200, description: 'Return all posts.' })
+  @ApiResponse({
+    status: 200,
+    description: 'Return all posts.',
+    schema: {
+      type: 'object',
+      properties: {
+        posts: { type: 'array', items: postResponseSchema },
+        total: { type: 'number', example: 100 },
+      },
+    },
+  })
   async findAll(
     @Query('limit') limit: number = 10,
     @Query('skip') skip: number = 0,
@@ -195,6 +310,11 @@ export class PostsController {
         removeImageUrls: { type: 'array', items: { type: 'string' } },
       },
     },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Updated post',
+    schema: postResponseSchema,
   })
   async updateContent(
     @Param('id') id: string,
@@ -235,6 +355,11 @@ export class PostsController {
   @UseGuards(AuthGuard('jwt'))
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete a post' })
+  @ApiResponse({
+    status: 200,
+    description: 'Post deleted',
+    schema: { type: 'object', properties: {} },
+  })
   async delete(@Param('id') id: string, @Req() req) {
     return this.postsService.delete(id, req.user._id);
   }
