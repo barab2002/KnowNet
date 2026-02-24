@@ -211,6 +211,25 @@ export class PostsController {
     return this.postsService.removeComment(id, commentId, req.user._id);
   }
 
+  @Post(':id/comments/:commentId/delete')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Delete a comment from a post (POST alias)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Updated post after comment removal',
+    schema: postResponseSchema,
+  })
+  @ApiResponse({ status: 403, description: 'Unauthorized' })
+  @ApiResponse({ status: 404, description: 'Post or comment not found' })
+  async deleteCommentViaPost(
+    @Param('id') id: string,
+    @Param('commentId') commentId: string,
+    @Req() req,
+  ) {
+    return this.postsService.removeComment(id, commentId, req.user._id);
+  }
+
   @Get('user/:userId')
   @ApiOperation({ summary: 'Get user posts (mocked to all for now)' })
   @ApiResponse({
