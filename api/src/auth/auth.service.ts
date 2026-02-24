@@ -2,6 +2,7 @@ import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/co
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 import * as bcrypt from 'bcrypt';
+import type { StringValue } from 'ms';
 
 @Injectable()
 export class AuthService {
@@ -27,7 +28,7 @@ export class AuthService {
     return {
       accessToken: this.jwtService.sign(payload, {
         secret: process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET || 'secretKey',
-        expiresIn: process.env.JWT_ACCESS_EXPIRES_IN || '15m',
+        expiresIn: (process.env.JWT_ACCESS_EXPIRES_IN || '15m') as StringValue,
       }),
       user: user,
     };
@@ -68,7 +69,7 @@ export class AuthService {
       { sub: userId },
       {
         secret: process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET || 'secretKey',
-        expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '30d',
+        expiresIn: (process.env.JWT_REFRESH_EXPIRES_IN || '30d') as StringValue,
       },
     );
 
@@ -112,7 +113,7 @@ export class AuthService {
       { sub: user._id },
       {
         secret: process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET || 'secretKey',
-        expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '30d',
+        expiresIn: (process.env.JWT_REFRESH_EXPIRES_IN || '30d') as StringValue,
       },
     );
 
