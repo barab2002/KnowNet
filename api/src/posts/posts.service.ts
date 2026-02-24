@@ -291,14 +291,30 @@ export class PostsService {
   async search(query: string): Promise<{ expandedTags: string[]; results: Array<Record<string, unknown> & { matchedTags: string[] }> }> {
     const expandedTags = await this.aiService.expandSearchQuery(query);
 
-    const posts = await this.postModel
-      .find({ tags: { $in: expandedTags } })
-      .populate('authorId', 'name profileImageUrl')
-      .sort({ createdAt: -1 })
-      .lean()
-      .exec();
+    // Run tag-based search and full-text search in parallel
+    const [tagPosts, textPosts] = await Promise.all([
+      this.postModel
+        .find({ tags: { $in: expandedTags } })
+        .populate('authorId', 'name profileImageUrl')
+        .lean()
+        .exec(),
+      this.postModel
+        .find({ $text: { $search: query } }, { score: { $meta: 'textScore' } })
+        .populate('authorId', 'name profileImageUrl')
+        .lean()
+        .exec(),
+    ]);
 
-    const results = posts
+    // Merge and deduplicate by _id (tag results first for better ranking)
+    const seen = new Set<string>();
+    const merged = [...tagPosts, ...textPosts].filter((post) => {
+      const id = (post._id as { toString(): string }).toString();
+      if (seen.has(id)) return false;
+      seen.add(id);
+      return true;
+    });
+
+    const results = merged
       .map((post) => ({
         ...post,
         matchedTags: (post.tags as string[]).filter((tag) => expandedTags.includes(tag)),

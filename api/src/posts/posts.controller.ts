@@ -90,7 +90,7 @@ export class PostsController {
   })
   async search(@Query('q') query: string) {
     if (!query) {
-      return [];
+      return { expandedTags: [], results: [] };
     }
     return this.postsService.search(query);
   }
