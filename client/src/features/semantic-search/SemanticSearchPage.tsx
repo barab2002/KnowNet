@@ -96,27 +96,6 @@ export const SemanticSearchPage = () => {
           ✨ Understanding context, intent, and community sentiment
         </p>
 
-        {/* AI Expanded Tags */}
-        {hasSearched && !isSearching && expandedTags.length > 0 && (
-          <div className="mt-6 bg-primary/5 border border-primary/20 rounded-xl p-4">
-            <div className="flex items-center gap-2 text-primary text-xs font-bold mb-2 uppercase tracking-wider">
-              <span className="material-symbols-outlined text-sm">
-                colors_spark
-              </span>
-              AI searched for these topics
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {expandedTags.map((tag, idx) => (
-                <span
-                  key={idx}
-                  className="text-xs font-semibold text-primary bg-primary/10 border border-primary/20 px-2 py-1 rounded-full"
-                >
-                  #{tag}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* Results Section */}
         {hasSearched && (
