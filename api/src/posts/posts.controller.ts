@@ -178,7 +178,7 @@ export class PostsController {
   @Patch(':id')
   @UseGuards(AuthGuard('jwt'))
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Update post text (author only)' })
+  @ApiOperation({ summary: 'Update post text or image (author only)' })
   @UseInterceptors(FileInterceptor('image'))
   @ApiConsumes('multipart/form-data')
   @ApiBody({
