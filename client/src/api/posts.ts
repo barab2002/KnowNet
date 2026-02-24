@@ -27,6 +27,7 @@ export interface Post {
 export interface CreatePostDto {
   content: string;
   authorId?: string;
+  tagModel?: string;
 }
 
 export interface UpdatePostDto {
@@ -58,6 +59,9 @@ export const createPost = async (
     formData.append('content', data.content);
     if (data.authorId) {
       formData.append('authorId', data.authorId);
+    }
+    if (data.tagModel) {
+      formData.append('tagModel', data.tagModel);
     }
     images.forEach((image) => formData.append('images', image));
     const response = await axios.post<Post>(API_URL, formData, {
@@ -116,7 +120,8 @@ export const deleteComment = async (
   token?: string | null,
 ): Promise<Post> => {
   const rawToken =
-    token || (axios.defaults.headers.common?.Authorization as string | undefined);
+    token ||
+    (axios.defaults.headers.common?.Authorization as string | undefined);
   const authHeader = rawToken
     ? rawToken.startsWith('Bearer ')
       ? rawToken
@@ -162,10 +167,12 @@ export const getTotalLikesForUser = async (userId: string): Promise<number> => {
 
 export interface SearchResultPost extends Post {
   matchedTags: string[];
+  matchSnippet?: string;
 }
 
 export interface SearchResponse {
   expandedTags: string[];
+  queryWords: string[];
   results: SearchResultPost[];
 }
 
@@ -195,7 +202,8 @@ export const updatePost = async (
   token?: string | null,
 ): Promise<Post> => {
   const rawToken =
-    token || (axios.defaults.headers.common?.Authorization as string | undefined);
+    token ||
+    (axios.defaults.headers.common?.Authorization as string | undefined);
   const authHeader = rawToken
     ? rawToken.startsWith('Bearer ')
       ? rawToken

@@ -1,6 +1,14 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { createPost } from '../api/posts';
 import { useAuth } from '../contexts/AuthContext';
+
+const TAG_MODELS = [
+  { id: 'llama-3.3-70b-versatile', label: 'Llama 3.3 70B', description: 'Best quality' },
+  { id: 'llama-3.1-8b-instant',    label: 'Llama 3.1 8B',  description: 'Fastest' },
+  { id: 'gemini-2.0-flash',        label: 'Gemini Flash',   description: 'Google' },
+] as const;
+
+type TagModelId = typeof TAG_MODELS[number]['id'];
 
 interface CreatePostFormProps {
   onSuccess?: () => void;
@@ -22,6 +30,20 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
   const [images, setImages] = useState<File[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [aiWarning, setAiWarning] = useState(false);
+  const [tagModel, setTagModel] = useState<TagModelId>('llama-3.3-70b-versatile');
+  const [modelMenuOpen, setModelMenuOpen] = useState(false);
+  const modelMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!modelMenuOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (modelMenuRef.current && !modelMenuRef.current.contains(e.target as Node)) {
+        setModelMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [modelMenuOpen]);
 
   const defaultAvatar =
     'https://lh3.googleusercontent.com/aida-public/AB6AXuCvtexDhPhar8YHNlSTSnW4u-Cr6-wLTamZ6XqrJcCGbnv8HsimarRRtRyBOXOivrORYRp5w4dPCWMc7KGnm8X9k3kPAXU9d6G4gN-ayhLHw5yHnG5Mh4wYJRpprIH9Rm8Q56nNjDmxPmfrhn5OkejcNpGBpQHyRZNnCYuEozb0BKzo27GFFl5ZPMAKFtOY3Kybd8KWCrsbCGJYc977RMJ4LdWMuB3NpS4jMZy4Vl058nKZE5lgpsUsafPMMG57ba5uOyNwIkIKMg';
@@ -36,6 +58,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
         {
           content: postText,
           authorId: user?._id,
+          tagModel,
         },
         images,
       );
@@ -132,7 +155,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
 
         {/* Action Toolbar */}
         <div className="flex flex-wrap gap-2 items-center justify-between border-t border-slate-100 dark:border-slate-800 pt-4">
-          <div className="flex gap-1">
+          <div className="flex gap-1 items-center">
             <label
               className="p-2 text-slate-500 hover:text-primary hover:bg-primary/10 rounded-lg transition-colors group cursor-pointer"
               title="Add Image (Pictures Only)"
@@ -161,6 +184,35 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
                 }}
               />
             </label>
+
+            {/* AI Model Picker */}
+            <div className="relative" ref={modelMenuRef}>
+              <button
+                type="button"
+                onClick={() => setModelMenuOpen((o) => !o)}
+                title="AI model for tag generation"
+                className="flex items-center gap-1 px-2 py-1.5 text-xs font-medium text-slate-500 hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
+              >
+                <span className="material-symbols-outlined text-[18px]">smart_toy</span>
+                <span className="hidden sm:inline">{TAG_MODELS.find((m) => m.id === tagModel)?.label ?? tagModel}</span>
+                <span className="material-symbols-outlined text-[14px]">expand_more</span>
+              </button>
+              {modelMenuOpen && (
+                <div className="absolute bottom-full left-0 mb-1 z-50 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg overflow-hidden min-w-[180px]">
+                  {TAG_MODELS.map((m) => (
+                    <button
+                      key={m.id}
+                      type="button"
+                      onClick={() => { setTagModel(m.id); setModelMenuOpen(false); }}
+                      className={`w-full text-left px-4 py-2.5 text-sm transition-colors hover:bg-primary/10 ${tagModel === m.id ? 'text-primary font-semibold' : 'text-slate-700 dark:text-slate-200'}`}
+                    >
+                      <span className="block font-medium">{m.label}</span>
+                      <span className="block text-xs text-slate-400">{m.description}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="flex gap-2">

@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreatePostDto {
@@ -19,4 +19,9 @@ export class CreatePostDto {
   })
   @IsString()
   authorId?: string;
+
+  @ApiProperty({ description: 'AI model to use for tag generation', required: false })
+  @IsOptional()
+  @IsString()
+  tagModel?: string;
 }
