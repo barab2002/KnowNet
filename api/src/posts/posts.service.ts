@@ -372,7 +372,7 @@ export class PostsService {
 
   async summarizePost(postId: string, userId?: string): Promise<Post> {
     const post = await this.postModel.findById(postId);
-    if (!post) throw new Error('Post not found');
+    if (!post) throw new NotFoundException('Post not found');
 
     let accessToken: string | undefined;
     if (userId) {

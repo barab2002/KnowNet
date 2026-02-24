@@ -103,12 +103,7 @@ export class PostsController {
     schema: postResponseSchema,
   })
   async summarize(@Param('id') id: string) {
-    try {
-      return await this.postsService.summarizePost(id);
-    } catch (error) {
-      // Re-throw with proper HTTP status
-      throw error;
-    }
+    return this.postsService.summarizePost(id);
   }
 
   @Post(':id/like')
