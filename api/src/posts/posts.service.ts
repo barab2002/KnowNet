@@ -64,7 +64,6 @@ export class PostsService {
     }
 
     // 2. Wait for AI to generate tags and summary before returning the post
-    let aiQuotaExceeded = false;
     try {
       const { summary, tags, userTags, aiTags } = await this.buildAiMetadata(content);
       await this.postModel.findByIdAndUpdate(createdPost._id, { summary, tags, userTags, aiTags });
@@ -73,14 +72,11 @@ export class PostsService {
       createdPost.userTags = userTags;
       createdPost.aiTags = aiTags;
     } catch (err) {
-      if (err instanceof Error && err.message === 'AI_QUOTA_EXCEEDED') {
-        aiQuotaExceeded = true;
-      } else {
-        this.logger.error(`AI processing failed for post ${createdPost._id}`, err);
-      }
+      this.logger.error(`AI processing failed for post ${createdPost._id}`, err);
     }
 
-    return { ...createdPost.toObject(), aiQuotaExceeded };
+    const aiQuotaExceeded = this.aiService.wasQuotaExceeded();
+    return Object.assign(createdPost, { aiQuotaExceeded });
   }
 
   private async buildAiMetadata(content: string) {

@@ -5,6 +5,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 export class AiService {
   private readonly logger = new Logger(AiService.name);
   private genAI: GoogleGenerativeAI;
+  private _quotaExceeded = false;
 
   constructor() {
     const apiKey = process.env.GEMINI_API_KEY;
@@ -16,6 +17,12 @@ export class AiService {
     } else {
       this.logger.warn('GEMINI_API_KEY not found. AI features will be mocked.');
     }
+  }
+
+  wasQuotaExceeded(): boolean {
+    const val = this._quotaExceeded;
+    this._quotaExceeded = false;
+    return val;
   }
 
   async generateTags(content: string): Promise<string[]> {
@@ -39,12 +46,12 @@ Post content: ${content}`;
       if (!Array.isArray(tags)) throw new Error('Response is not an array');
       return tags.slice(0, 20).map((t) => t.toLowerCase().trim());
     } catch (error) {
-      const isQuotaError = error instanceof Error && error.message.includes('429');
-      if (isQuotaError) {
-        this.logger.warn('Gemini quota exceeded — falling back to keyword extraction');
-        throw new Error('AI_QUOTA_EXCEEDED');
+      if (error instanceof Error && error.message.includes('429')) {
+        this.logger.warn('Gemini daily quota exceeded — using keyword fallback for tags');
+        this._quotaExceeded = true;
+      } else {
+        this.logger.error('Failed to generate tags with Gemini', error);
       }
-      this.logger.error('Failed to generate tags with Gemini', error);
       return this.extractKeywordsFallback(content);
     }
   }
@@ -74,7 +81,7 @@ Search query: ${query}`;
     }
   }
 
-  private extractKeywordsFallback(content: string): string[] {
+  extractKeywordsFallback(content: string): string[] {
     const stopWords = new Set([
       'about', 'there', 'their', 'would', 'could', 'should', 'which',
       'these', 'those', 'where', 'while', 'after', 'before', 'other',
@@ -92,8 +99,6 @@ Search query: ${query}`;
     content: string,
     accessToken?: string,
   ): Promise<string> {
-    // 1. If Access Token is provided, try to use it with REST API (User Quota)
-    // 1. Log the context (User Quota not used to avoid scope verification issues)
     if (accessToken) {
       this.logger.log(
         `[AiService] Generating summary on behalf of authenticated user (Token available)`,
@@ -104,7 +109,6 @@ Search query: ${query}`;
       );
     }
 
-    // 2. Fallback to Server API Key
     if (!this.genAI) {
       this.logger.warn('Generate Summary called but no API Key is available.');
       return 'Mock summary: This is a placeholder summary because no API key was provided.';
