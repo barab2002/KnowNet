@@ -27,6 +27,10 @@ export interface CreatePostDto {
   authorId?: string;
 }
 
+export interface UpdatePostDto {
+  content: string;
+}
+
 // In development, Vite will proxy /api to http://localhost:3000
 // In production (Docker/Nginx), Nginx will proxy /api to http://api:3000
 const API_URL = '/api/posts';
@@ -138,4 +142,12 @@ export const deletePost = async (
   userId: string, // Kept for interface compatibility but unused in payload
 ): Promise<void> => {
   await axios.delete(`${API_URL}/${postId}`);
+};
+
+export const updatePost = async (
+  postId: string,
+  data: UpdatePostDto,
+): Promise<Post> => {
+  const response = await axios.patch<Post>(`${API_URL}/${postId}`, data);
+  return response.data;
 };
