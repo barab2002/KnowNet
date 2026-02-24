@@ -7,6 +7,7 @@ export interface Post {
   createdAt: string;
   updatedAt: string;
   imageUrl?: string;
+  imageUrls?: string[];
   summary?: string;
   authorId?: string | { _id: string; name: string; profileImageUrl?: string }; // ID or Populated User Object
   likes: string[];
@@ -27,6 +28,12 @@ export interface CreatePostDto {
   authorId?: string;
 }
 
+export interface UpdatePostDto {
+  content?: string;
+  removeImage?: boolean;
+  removeImageUrls?: string[];
+}
+
 // In development, Vite will proxy /api to http://localhost:3000
 // In production (Docker/Nginx), Nginx will proxy /api to http://api:3000
 const API_URL = '/api/posts';
@@ -43,15 +50,15 @@ export const getPosts = async (
 
 export const createPost = async (
   data: CreatePostDto,
-  image?: File,
+  images?: File[],
 ): Promise<Post> => {
-  if (image) {
+  if (images && images.length > 0) {
     const formData = new FormData();
     formData.append('content', data.content);
     if (data.authorId) {
       formData.append('authorId', data.authorId);
     }
-    formData.append('image', image);
+    images.forEach((image) => formData.append('images', image));
     const response = await axios.post<Post>(API_URL, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
@@ -138,4 +145,48 @@ export const deletePost = async (
   userId: string, // Kept for interface compatibility but unused in payload
 ): Promise<void> => {
   await axios.delete(`${API_URL}/${postId}`);
+};
+
+export const updatePost = async (
+  postId: string,
+  data: UpdatePostDto,
+  images?: File[],
+  token?: string | null,
+): Promise<Post> => {
+  const rawToken =
+    token || (axios.defaults.headers.common?.Authorization as string | undefined);
+  const authHeader = rawToken
+    ? rawToken.startsWith('Bearer ')
+      ? rawToken
+      : `Bearer ${rawToken}`
+    : undefined;
+  if ((images && images.length > 0) || data.removeImageUrls?.length) {
+    const formData = new FormData();
+    if (data.content) {
+      formData.append('content', data.content);
+    }
+    if (data.removeImage) {
+      formData.append('removeImage', 'true');
+    }
+    if (data.removeImageUrls?.length) {
+      data.removeImageUrls.forEach((url) =>
+        formData.append('removeImageUrls', url),
+      );
+    }
+    if (images && images.length > 0) {
+      images.forEach((image) => formData.append('images', image));
+    }
+    const response = await axios.patch<Post>(`${API_URL}/${postId}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+        ...(authHeader ? { Authorization: authHeader } : {}),
+      },
+    });
+    return response.data;
+  }
+
+  const response = await axios.patch<Post>(`${API_URL}/${postId}`, data, {
+    headers: authHeader ? { Authorization: authHeader } : undefined,
+  });
+  return response.data;
 };

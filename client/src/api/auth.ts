@@ -32,12 +32,12 @@ export interface AuthResponse {
 }
 
 const API_URL = '/api/auth';
+const AUTH_CONFIG = { withCredentials: true };
 
 const exchangeFirebaseToken = async (idToken: string): Promise<AuthResponse> => {
-  const response = await axios.post<{ accessToken: string; user: AuthResponse['user'] }>(
-    `${API_URL}/firebase`,
-    { idToken },
-  );
+  const response = await axios.post<
+    { accessToken: string; user: AuthResponse['user'] }
+  >(`${API_URL}/firebase`, { idToken }, AUTH_CONFIG);
   return { token: response.data.accessToken, user: response.data.user };
 };
 
@@ -63,6 +63,13 @@ export const register = async (data: RegisterData): Promise<AuthResponse> => {
 
 export const logout = async (): Promise<void> => {
   await signOut(auth);
+};
+
+export const refreshAccessToken = async (): Promise<AuthResponse> => {
+  const response = await axios.post<
+    { accessToken: string; user: AuthResponse['user'] }
+  >(`${API_URL}/refresh`, {}, AUTH_CONFIG);
+  return { token: response.data.accessToken, user: response.data.user };
 };
 
 export const getProfile = async (token: string): Promise<AuthResponse['user']> => {

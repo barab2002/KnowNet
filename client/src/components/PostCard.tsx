@@ -6,9 +6,11 @@ import {
   addComment,
   summarizePost,
   deletePost,
+  updatePost,
 } from '../api/posts';
 import { useAuth } from '../contexts/AuthContext';
 import { Modal } from './Modal';
+import { EditPostModal } from './EditPostModal';
 
 interface PostCardProps {
   post: Post;
@@ -27,6 +29,8 @@ export const PostCard = React.memo(
   const [localPost, setLocalPost] = useState(post);
   const [localSummary, setLocalSummary] = useState(post.summary);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const carouselRef = React.useRef<HTMLDivElement | null>(null);
 
   // Sync local summary if prop updates (e.g. from parent refresh)
   React.useEffect(() => {
@@ -34,7 +38,7 @@ export const PostCard = React.memo(
     setLocalSummary(post.summary);
   }, [post]);
 
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const currentUserId = user?._id || '';
 
   // Handle Author Info (Support both populated object and legacy string ID)
@@ -58,6 +62,22 @@ export const PostCard = React.memo(
 
   const isLiked = localPost.likes.includes(currentUserId);
   const isSaved = localPost.savedBy.includes(currentUserId);
+
+  const images = React.useMemo(() => {
+    if (localPost.imageUrls && localPost.imageUrls.length > 0) {
+      return localPost.imageUrls;
+    }
+    if (localPost.imageUrl) {
+      return [localPost.imageUrl];
+    }
+    return [];
+  }, [localPost.imageUrl, localPost.imageUrls]);
+
+  const scrollImages = (direction: 'left' | 'right') => {
+    if (!carouselRef.current) return;
+    const offset = direction === 'left' ? -420 : 420;
+    carouselRef.current.scrollBy({ left: offset, behavior: 'smooth' });
+  };
 
   const handleLike = async () => {
     try {
@@ -124,6 +144,28 @@ export const PostCard = React.memo(
     }
   };
 
+  const handleEditSave = async (
+    content: string,
+    images?: File[],
+    removeImageUrls?: string[],
+  ) => {
+    try {
+      const updatedPost = await updatePost(
+        post._id,
+        { content, removeImageUrls },
+        images,
+        token,
+      );
+      setLocalPost(updatedPost);
+      setLocalSummary(updatedPost.summary);
+      setShowEditModal(false);
+      if (onUpdate) onUpdate();
+    } catch (err) {
+      console.error('Failed to update post', err);
+      setError('Failed to update post. Please try again.');
+    }
+  };
+
   return (
     <>
       <article className="bg-white dark:bg-card-dark rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden hover:border-primary/50 transition-colors">
@@ -156,15 +198,24 @@ export const PostCard = React.memo(
 
             <div className="flex items-center gap-2">
               {authorIdStr === currentUserId && (
-                <button
-                  onClick={() => setShowDeleteModal(true)}
-                  className="text-slate-400 hover:text-red-500 transition-colors p-1"
-                  title="Delete Post"
-                >
-                  <span className="material-icons-round text-xl">
-                    delete_outline
-                  </span>
-                </button>
+                <>
+                  <button
+                    onClick={() => setShowEditModal(true)}
+                    className="text-slate-400 hover:text-primary transition-colors p-1"
+                    title="Edit Post"
+                  >
+                    <span className="material-icons-round text-xl">edit</span>
+                  </button>
+                  <button
+                    onClick={() => setShowDeleteModal(true)}
+                    className="text-slate-400 hover:text-red-500 transition-colors p-1"
+                    title="Delete Post"
+                  >
+                    <span className="material-icons-round text-xl">
+                      delete_outline
+                    </span>
+                  </button>
+                </>
               )}
               {/* Removed menu button */}
             </div>
@@ -200,14 +251,46 @@ export const PostCard = React.memo(
             {localPost.content}
           </p>
 
-          {localPost.imageUrl && (
-            <div className="rounded-xl overflow-hidden mb-4 border border-slate-100 dark:border-slate-800">
-              <img
-                src={localPost.imageUrl}
-                alt="Post attachment"
-                className="w-full h-auto object-cover max-h-[500px]"
-                loading="lazy"
-              />
+          {images.length > 0 && (
+            <div className="relative rounded-xl overflow-hidden mb-4 border border-slate-100 dark:border-slate-800">
+              <div
+                ref={carouselRef}
+                className="flex gap-3 overflow-x-auto snap-x snap-mandatory scroll-smooth"
+              >
+                {images.map((image, index) => (
+                  <div
+                    key={`${image}-${index}`}
+                    className="min-w-full snap-start"
+                  >
+                    <img
+                      src={image}
+                      alt="Post attachment"
+                      className="w-full h-auto object-cover max-h-[500px]"
+                      loading="lazy"
+                    />
+                  </div>
+                ))}
+              </div>
+              {images.length > 1 && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => scrollImages('left')}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full bg-white/80 text-slate-700 w-9 h-9 flex items-center justify-center shadow"
+                    title="Previous image"
+                  >
+                    ‹
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => scrollImages('right')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-white/80 text-slate-700 w-9 h-9 flex items-center justify-center shadow"
+                    title="Next image"
+                  >
+                    ›
+                  </button>
+                </>
+              )}
             </div>
           )}
 
@@ -399,6 +482,14 @@ export const PostCard = React.memo(
           </div>
         </div>
       </Modal>
+
+      <EditPostModal
+        isOpen={showEditModal}
+        initialContent={localPost.content}
+        initialImageUrls={images}
+        onClose={() => setShowEditModal(false)}
+        onSave={handleEditSave}
+      />
     </>
   );
 });

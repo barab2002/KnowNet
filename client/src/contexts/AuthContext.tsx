@@ -11,6 +11,7 @@ import {
   register as apiRegister,
   logout as apiLogout,
   loginWithGoogle as apiLoginWithGoogle,
+  refreshAccessToken,
   LoginCredentials,
   RegisterData,
   AuthResponse,
@@ -82,6 +83,42 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       delete axios.defaults.headers.common['Authorization'];
     }
   }, [token]);
+
+  // Auto-refresh access token on 401
+  useEffect(() => {
+    const interceptor = axios.interceptors.response.use(
+      (response) => response,
+      async (error) => {
+        const originalRequest = error.config;
+        if (
+          error.response?.status === 401 &&
+          originalRequest &&
+          !originalRequest._retry
+        ) {
+          originalRequest._retry = true;
+          try {
+            const refreshed = await refreshAccessToken();
+            const rememberMe =
+              localStorage.getItem(REMEMBER_ME_KEY) === 'true';
+            saveAuthState(refreshed, rememberMe);
+            originalRequest.headers = {
+              ...originalRequest.headers,
+              Authorization: `Bearer ${refreshed.token}`,
+            };
+            return axios.request(originalRequest);
+          } catch (refreshError) {
+            clearAuthState();
+            return Promise.reject(refreshError);
+          }
+        }
+        return Promise.reject(error);
+      },
+    );
+
+    return () => {
+      axios.interceptors.response.eject(interceptor);
+    };
+  }, []);
 
   useEffect(() => {
     const hydrateProfile = async () => {

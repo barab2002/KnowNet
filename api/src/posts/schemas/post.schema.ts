@@ -23,6 +23,9 @@ export class Post {
   @Prop({ type: String, required: false })
   imageUrl?: string;
 
+  @Prop({ type: [String], default: [] })
+  imageUrls?: string[];
+
   @Prop({ type: String, ref: 'User', required: false }) // Making optional for backward compatibility
   authorId?: string;
 

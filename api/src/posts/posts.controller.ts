@@ -2,21 +2,31 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
   Body,
   Param,
   Delete,
   UseInterceptors,
   UploadedFile,
+  UploadedFiles,
   Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FilesInterceptor } from '@nestjs/platform-express';
 import { Express } from 'express';
-import { ApiBearerAuth, ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { PostsService } from './posts.service';
 import { CreatePostDto } from './dto/create-post.dto';
+import { UpdatePostDto } from './dto/update-post.dto';
 
 @ApiTags('posts')
 @Controller('posts')
@@ -122,9 +132,18 @@ export class PostsController {
   @Post()
   @UseGuards(AuthGuard('jwt')) // Enforce login for posting
   @ApiBearerAuth()
-  @UseInterceptors(FileInterceptor('image'))
-  @ApiOperation({ summary: 'Create a new post with optional image' })
-  @ApiBody({ type: CreatePostDto })
+  @UseInterceptors(FilesInterceptor('images'))
+  @ApiOperation({ summary: 'Create a new post with optional images' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        content: { type: 'string', example: 'Post content' },
+        images: { type: 'array', items: { type: 'string', format: 'binary' } },
+      },
+    },
+  })
   @ApiResponse({
     status: 201,
     description: 'The post has been successfully created.',
@@ -132,28 +151,16 @@ export class PostsController {
   async create(
     @Body() createPostDto: CreatePostDto,
     @Req() req,
-    @UploadedFile() image?: any,
+    @UploadedFiles() images?: Express.Multer.File[],
   ) {
     // Enforce authorId from token
     createPostDto.authorId = req.user._id;
 
-    // In a real app, upload to S3/Cloudinary here.
-    // In a real app, upload to S3/Cloudinary here.
-    // For local demo, we'll base64 encode small images or just skip file persistence complexity (recommend using a cloud service for better perf).
-    // Let's implement basics: if image exists, we'll pretend we got a URL.
-    let imageUrl = '';
-    if (image) {
-      // Simple base64 for MVP without external storage
-      const b64 = Buffer.from(image.buffer).toString('base64');
-      imageUrl = `data:${image.mimetype};base64,${b64}`;
-    }
+    const files = images?.length
+      ? images.map((image) => ({ buffer: image.buffer, mimetype: image.mimetype }))
+      : undefined;
 
-    return this.postsService.createWithImage(
-      createPostDto,
-      imageUrl,
-      image ? image.buffer : undefined,
-      image ? image.mimetype : undefined,
-    );
+    return this.postsService.createWithImage(createPostDto, files);
   }
 
   @Get()
@@ -164,6 +171,58 @@ export class PostsController {
     @Query('skip') skip: number = 0,
   ) {
     return this.postsService.findAll(Number(limit), Number(skip));
+  }
+
+  @Patch(':id')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update post text or image (author only)' })
+  @UseInterceptors(FilesInterceptor('images'))
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        content: { type: 'string', example: 'Updated post content' },
+        images: { type: 'array', items: { type: 'string', format: 'binary' } },
+        removeImage: { type: 'boolean', example: true },
+        removeImageUrls: { type: 'array', items: { type: 'string' } },
+      },
+    },
+  })
+  async updateContent(
+    @Param('id') id: string,
+    @Body() body: UpdatePostDto,
+    @Req() req,
+    @UploadedFiles() images?: Express.Multer.File[],
+  ) {
+    const files = images?.length
+      ? images.map((image) => ({ buffer: image.buffer, mimetype: image.mimetype }))
+      : undefined;
+    const removeImageUrls = this.normalizeRemoveImageUrls(body.removeImageUrls);
+    return this.postsService.updatePostContent(
+      id,
+      req.user._id,
+      body.content,
+      files,
+      removeImageUrls,
+      body.removeImage,
+    );
+  }
+
+  private normalizeRemoveImageUrls(input?: string[] | string): string[] {
+    if (!input) return [];
+    if (Array.isArray(input)) return input;
+    try {
+      const parsed = JSON.parse(input);
+      if (Array.isArray(parsed)) return parsed.map(String);
+    } catch {
+      return input
+        .split(',')
+        .map((value) => value.trim())
+        .filter(Boolean);
+    }
+    return [];
   }
 
   @Delete(':id')
