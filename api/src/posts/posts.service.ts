@@ -239,6 +239,12 @@ export class PostsService {
     return post.save();
   }
 
+  async getComments(postId: string) {
+    const post = await this.postModel.findById(postId).select('comments').exec();
+    if (!post) throw new NotFoundException('Post not found');
+    return post.comments || [];
+  }
+
   async toggleSave(postId: string, userId: string): Promise<Post> {
     const post = await this.postModel.findById(postId);
     if (!post) throw new Error('Post not found');
