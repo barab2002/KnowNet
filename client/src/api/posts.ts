@@ -7,6 +7,7 @@ export interface Post {
   createdAt: string;
   updatedAt: string;
   imageUrl?: string;
+  imageUrls?: string[];
   summary?: string;
   authorId?: string | { _id: string; name: string; profileImageUrl?: string }; // ID or Populated User Object
   likes: string[];
