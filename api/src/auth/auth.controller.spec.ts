@@ -34,21 +34,26 @@ describe('AuthController', () => {
 
   describe('firebaseAuth', () => {
     it('should throw UnauthorizedException when no idToken provided', async () => {
-      await expect(controller.firebaseAuth({ idToken: '' })).rejects.toThrow(
+      const res = { cookie: jest.fn(), clearCookie: jest.fn() } as any;
+      await expect(controller.firebaseAuth({ idToken: '' }, res)).rejects.toThrow(
         UnauthorizedException,
       );
     });
 
-    it('should return access_token and user on valid token', async () => {
+    it('should return accessToken and user on valid token', async () => {
       const decodedToken = { uid: 'uid1', email: 'test@test.com', name: 'John' };
       const user = { _id: 'uid1', email: 'test@test.com', name: 'John' };
-      const loginResult = { access_token: 'jwt-token', user };
+      const loginResult = { accessToken: 'jwt-token', user };
+      const res = { cookie: jest.fn(), clearCookie: jest.fn() } as any;
 
       mockFirebaseService.verifyIdToken.mockResolvedValue(decodedToken);
       mockAuthService.validateFirebaseUser.mockResolvedValue(user);
       mockAuthService.login.mockResolvedValue(loginResult);
 
-      const result = await controller.firebaseAuth({ idToken: 'valid-firebase-token' });
+      const result = await controller.firebaseAuth(
+        { idToken: 'valid-firebase-token' },
+        res,
+      );
 
       expect(mockFirebaseService.verifyIdToken).toHaveBeenCalledWith('valid-firebase-token');
       expect(mockAuthService.validateFirebaseUser).toHaveBeenCalledWith(decodedToken);
@@ -57,10 +62,11 @@ describe('AuthController', () => {
     });
 
     it('should throw UnauthorizedException when Firebase verification fails', async () => {
+      const res = { cookie: jest.fn(), clearCookie: jest.fn() } as any;
       mockFirebaseService.verifyIdToken.mockRejectedValue(new Error('Invalid token'));
 
       await expect(
-        controller.firebaseAuth({ idToken: 'bad-token' }),
+        controller.firebaseAuth({ idToken: 'bad-token' }, res),
       ).rejects.toThrow(UnauthorizedException);
     });
   });
