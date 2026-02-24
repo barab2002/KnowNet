@@ -7,8 +7,6 @@ services:
     env_file: .env.production
     network_mode: host
     restart: always
-    volumes:
-      - /etc/letsencrypt:/etc/letsencrypt:ro
 
   client:
     build:
@@ -24,5 +22,3 @@ services:
     depends_on:
       - api
     restart: always
-    volumes:
-      - /etc/letsencrypt:/etc/letsencrypt:ro
