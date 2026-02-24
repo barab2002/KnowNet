@@ -122,8 +122,9 @@ export const deleteComment = async (
       ? rawToken
       : `Bearer ${rawToken}`
     : undefined;
-  const response = await axios.delete<Post>(
-    `${API_URL}/${postId}/comments/${commentId}`,
+  const response = await axios.post<Post>(
+    `${API_URL}/${postId}/comments/${commentId}/delete`,
+    {},
     {
       headers: authHeader ? { Authorization: authHeader } : undefined,
     },
