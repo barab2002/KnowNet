@@ -34,11 +34,11 @@ export interface AuthResponse {
 const API_URL = '/api/auth';
 
 const exchangeFirebaseToken = async (idToken: string): Promise<AuthResponse> => {
-  const response = await axios.post<{ access_token: string; user: AuthResponse['user'] }>(
+  const response = await axios.post<{ accessToken: string; user: AuthResponse['user'] }>(
     `${API_URL}/firebase`,
     { idToken },
   );
-  return { token: response.data.access_token, user: response.data.user };
+  return { token: response.data.accessToken, user: response.data.user };
 };
 
 export const loginWithGoogle = async (): Promise<AuthResponse> => {
