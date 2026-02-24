@@ -30,7 +30,7 @@ export class AuthService {
     return {
       accessToken: this.jwtService.sign(payload, {
         secret: process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET || 'secretKey',
-        expiresIn: accessExpiresIn,
+        expiresIn: (process.env.JWT_ACCESS_EXPIRES_IN || '15m') as StringValue,
       }),
       user: user,
     };
@@ -73,7 +73,7 @@ export class AuthService {
       { sub: userId },
       {
         secret: process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET || 'secretKey',
-        expiresIn: refreshExpiresIn,
+        expiresIn: (process.env.JWT_REFRESH_EXPIRES_IN || '30d') as StringValue,
       },
     );
 
@@ -119,7 +119,7 @@ export class AuthService {
       { sub: user._id },
       {
         secret: process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET || 'secretKey',
-        expiresIn: refreshExpiresIn,
+        expiresIn: (process.env.JWT_REFRESH_EXPIRES_IN || '30d') as StringValue,
       },
     );
 
