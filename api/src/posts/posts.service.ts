@@ -38,11 +38,12 @@ export class PostsService {
 
   async createWithImage(
     createPostDto: CreatePostDto,
-    imageUrl?: string,
-    imageBuffer?: Buffer,
-    mimetype?: string,
+    images?: { buffer: Buffer; mimetype: string }[],
   ): Promise<Post> {
     const { content, authorId } = createPostDto;
+    const imageUrls = images?.length
+      ? this.buildImageUrls(images)
+      : [];
 
     // 1. Create and save post immediately with basic data
     const createdPost = new this.postModel({
@@ -51,7 +52,8 @@ export class PostsService {
       userTags: [],
       aiTags: [],
       summary: '',
-      imageUrl,
+      imageUrls,
+      imageUrl: imageUrls[0],
       authorId,
     });
 
@@ -135,8 +137,8 @@ export class PostsService {
     postId: string,
     userId: string,
     content?: string,
-    imageBuffer?: Buffer,
-    mimetype?: string,
+    images?: { buffer: Buffer; mimetype: string }[],
+    removeImageUrls?: string[],
     removeImage?: boolean,
   ): Promise<Post> {
     const post = await this.postModel.findById(postId);
@@ -146,13 +148,26 @@ export class PostsService {
       throw new ForbiddenException('Unauthorized to edit this post');
     }
 
+    let imageUrls = post.imageUrls?.length
+      ? [...post.imageUrls]
+      : post.imageUrl
+        ? [post.imageUrl]
+        : [];
+
     if (removeImage) {
-      post.imageUrl = undefined;
+      imageUrls = [];
     }
 
-    if (imageBuffer && mimetype) {
-      post.imageUrl = this.buildImageUrl(imageBuffer, mimetype);
+    if (removeImageUrls?.length) {
+      imageUrls = imageUrls.filter((url) => !removeImageUrls.includes(url));
     }
+
+    if (images?.length) {
+      imageUrls.push(...this.buildImageUrls(images));
+    }
+
+    post.imageUrls = imageUrls;
+    post.imageUrl = imageUrls[0];
 
     if (typeof content === 'string' && content !== post.content) {
       const { summary, tags, userTags, aiTags } = await this.buildAiMetadata(
@@ -171,6 +186,10 @@ export class PostsService {
   private buildImageUrl(imageBuffer: Buffer, mimetype: string) {
     const b64 = Buffer.from(imageBuffer).toString('base64');
     return `data:${mimetype};base64,${b64}`;
+  }
+
+  private buildImageUrls(images: { buffer: Buffer; mimetype: string }[]) {
+    return images.map((image) => this.buildImageUrl(image.buffer, image.mimetype));
   }
 
   async toggleLike(postId: string, userId: string): Promise<Post> {
