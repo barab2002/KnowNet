@@ -5,6 +5,7 @@
 
 import { config } from 'dotenv';
 import { join } from 'path';
+import { readFileSync } from 'fs';
 
 const envFile = process.env.NODE_ENV === 'production'
   ? '.env.production'
@@ -19,7 +20,18 @@ import { AppModule } from './app/app.module';
 import cookieParser from 'cookie-parser';
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const isProduction = process.env.NODE_ENV === 'production';
+
+  const httpsOptions = isProduction
+    ? {
+        key: readFileSync(join(process.cwd(), '/home/node89/tepper/client-key.pem')),
+        cert: readFileSync(join(process.cwd(), '/home/node89/tepper/client-cert.pem')),
+      }
+    : undefined;
+
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    httpsOptions,
+  });
   const globalPrefix = 'api';
   app.setGlobalPrefix(globalPrefix);
   app.enableCors({
@@ -49,10 +61,10 @@ async function bootstrap() {
   const port = process.env.PORT || 3000;
   await app.listen(port);
   Logger.log(
-    `🚀 Application is running on: http://localhost:${port}/${globalPrefix}`,
+    `🚀 Application is running on: ${isProduction ? 'https' : 'http'}://localhost:${port}/${globalPrefix}`,
   );
   Logger.log(
-    `📚 Swagger documentation available at: http://localhost:${port}/${globalPrefix}/docs`,
+    `📚 Swagger documentation available at: ${isProduction ? 'https' : 'http'}://localhost:${port}/${globalPrefix}/docs`,
   );
 }
 
