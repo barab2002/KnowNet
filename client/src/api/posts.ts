@@ -28,7 +28,7 @@ export interface CreatePostDto {
 }
 
 export interface UpdatePostDto {
-  content: string;
+  content?: string;
 }
 
 // In development, Vite will proxy /api to http://localhost:3000
@@ -147,7 +147,20 @@ export const deletePost = async (
 export const updatePost = async (
   postId: string,
   data: UpdatePostDto,
+  image?: File,
 ): Promise<Post> => {
+  if (image) {
+    const formData = new FormData();
+    if (data.content) {
+      formData.append('content', data.content);
+    }
+    formData.append('image', image);
+    const response = await axios.patch<Post>(`${API_URL}/${postId}`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  }
+
   const response = await axios.patch<Post>(`${API_URL}/${postId}`, data);
   return response.data;
 };
