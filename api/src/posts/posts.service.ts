@@ -245,6 +245,27 @@ export class PostsService {
     return post.comments || [];
   }
 
+  async removeComment(
+    postId: string,
+    commentId: string,
+    userId: string,
+  ): Promise<Post> {
+    const post = await this.postModel.findById(postId);
+    if (!post) throw new NotFoundException('Post not found');
+
+    const comment = (post.comments as any).id?.(commentId);
+    if (!comment) throw new NotFoundException('Comment not found');
+
+    const isPostAuthor = post.authorId?.toString() === userId;
+    const isCommentAuthor = comment.userId?.toString() === userId;
+    if (!isPostAuthor && !isCommentAuthor) {
+      throw new ForbiddenException('Unauthorized to delete this comment');
+    }
+
+    comment.remove();
+    return post.save();
+  }
+
   async toggleSave(postId: string, userId: string): Promise<Post> {
     const post = await this.postModel.findById(postId);
     if (!post) throw new Error('Post not found');
