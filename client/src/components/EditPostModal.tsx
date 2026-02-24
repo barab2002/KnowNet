@@ -4,50 +4,58 @@ import { Modal } from './Modal';
 interface EditPostModalProps {
   isOpen: boolean;
   initialContent: string;
-  initialImageUrl?: string;
+  initialImageUrls?: string[];
   onClose: () => void;
-  onSave: (content: string, image?: File, removeImage?: boolean) => Promise<void> | void;
+  onSave: (
+    content: string,
+    images?: File[],
+    removeImageUrls?: string[],
+  ) => Promise<void> | void;
 }
 
 export const EditPostModal: React.FC<EditPostModalProps> = ({
   isOpen,
   initialContent,
-  initialImageUrl,
+  initialImageUrls = [],
   onClose,
   onSave,
 }) => {
   const [content, setContent] = useState(initialContent);
   const [isSaving, setIsSaving] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<File | undefined>(
-    undefined,
-  );
-  const [removeImage, setRemoveImage] = useState(false);
+  const [selectedImages, setSelectedImages] = useState<File[]>([]);
+  const [removedImageUrls, setRemovedImageUrls] = useState<string[]>([]);
   const carouselRef = useRef<HTMLDivElement | null>(null);
 
   React.useEffect(() => {
     if (isOpen) {
       setContent(initialContent);
-      setSelectedImage(undefined);
-      setRemoveImage(false);
+      setSelectedImages([]);
+      setRemovedImageUrls([]);
     }
   }, [isOpen, initialContent]);
 
   const trimmed = useMemo(() => content.trim(), [content]);
   const isContentChanged = trimmed !== initialContent.trim();
   const isDisabled =
-    trimmed.length === 0 || (!isContentChanged && !selectedImage && !removeImage);
-  const previewUrl = useMemo(() => {
-    if (!selectedImage) return undefined;
-    return URL.createObjectURL(selectedImage);
-  }, [selectedImage]);
+    trimmed.length === 0 ||
+    (!isContentChanged &&
+      selectedImages.length === 0 &&
+      removedImageUrls.length === 0);
+
+  const previews = useMemo(
+    () =>
+      selectedImages.map((file) => ({
+        file,
+        url: URL.createObjectURL(file),
+      })),
+    [selectedImages],
+  );
 
   React.useEffect(() => {
     return () => {
-      if (previewUrl) {
-        URL.revokeObjectURL(previewUrl);
-      }
+      previews.forEach((preview) => URL.revokeObjectURL(preview.url));
     };
-  }, [previewUrl]);
+  }, [previews]);
 
   const images = useMemo(() => {
     const items: {
@@ -55,14 +63,26 @@ export const EditPostModal: React.FC<EditPostModalProps> = ({
       src: string;
       type: 'current' | 'new';
     }[] = [];
-    if (initialImageUrl && !removeImage) {
-      items.push({ key: 'current', src: initialImageUrl, type: 'current' });
-    }
-    if (previewUrl) {
-      items.push({ key: 'new', src: previewUrl, type: 'new' });
-    }
+    initialImageUrls
+      .filter((url) => !removedImageUrls.includes(url))
+      .forEach((url) => {
+        items.push({ key: url, src: url, type: 'current' });
+      });
+    previews.forEach((preview, index) => {
+      items.push({
+        key: `${preview.url}-${index}`,
+        src: preview.url,
+        type: 'new',
+      });
+    });
     return items;
-  }, [initialImageUrl, removeImage, previewUrl]);
+  }, [initialImageUrls, previews, removedImageUrls]);
+
+  const removeNewImageByUrl = (url: string) => {
+    setSelectedImages((prev) =>
+      prev.filter((_, index) => previews[index]?.url !== url),
+    );
+  };
 
   const scrollCarousel = (direction: 'left' | 'right') => {
     if (!carouselRef.current) return;
@@ -74,7 +94,7 @@ export const EditPostModal: React.FC<EditPostModalProps> = ({
     if (isDisabled) return;
     try {
       setIsSaving(true);
-      await onSave(trimmed, selectedImage, removeImage);
+      await onSave(trimmed, selectedImages, removedImageUrls);
     } finally {
       setIsSaving(false);
     }
@@ -105,79 +125,82 @@ export const EditPostModal: React.FC<EditPostModalProps> = ({
             Post image
           </label>
           <div className="mt-2 space-y-2">
-            {images.length > 0 ? (
-              <div className="relative">
-                <div
-                  ref={carouselRef}
-                  className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scroll-smooth"
-                >
-                  <label className="relative min-w-[200px] snap-start rounded-lg overflow-hidden border-2 border-dashed border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800/60 flex items-center justify-center cursor-pointer">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) =>
-                        setSelectedImage(e.target.files?.[0] || undefined)
-                      }
-                      className="hidden"
+            <div className="relative">
+              <div
+                ref={carouselRef}
+                className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scroll-smooth"
+              >
+                <label className="relative min-w-[200px] snap-start rounded-lg overflow-hidden border-2 border-dashed border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800/60 flex items-center justify-center cursor-pointer">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) =>
+                      setSelectedImages((prev) => [
+                        ...prev,
+                        ...Array.from(e.target.files || []),
+                      ])
+                    }
+                    className="hidden"
+                    multiple
+                  />
+                  <span className="text-2xl text-slate-400">+</span>
+                </label>
+                {images.map((image) => (
+                  <div
+                    key={image.key}
+                    className="relative min-w-[240px] snap-start rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700"
+                  >
+                    <img
+                      src={image.src}
+                      alt="Post preview"
+                      className="w-full h-40 object-cover"
                     />
-                    <span className="text-2xl text-slate-400">+</span>
-                  </label>
-                  {images.map((image) => (
-                    <div
-                      key={image.key}
-                      className="relative min-w-[240px] snap-start rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700"
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (image.type === 'current') {
+                          setRemovedImageUrls((prev) => [...prev, image.src]);
+                        } else {
+                          removeNewImageByUrl(image.src);
+                        }
+                      }}
+                      className="absolute top-2 right-2 rounded-full bg-black/60 text-white w-7 h-7 flex items-center justify-center hover:bg-black/80"
+                      title="Remove image"
                     >
-                      <img
-                        src={image.src}
-                        alt="Post preview"
-                        className="w-full h-40 object-cover"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (image.type === 'current') {
-                            setRemoveImage(true);
-                          } else {
-                            setSelectedImage(undefined);
-                          }
-                        }}
-                        className="absolute top-2 right-2 rounded-full bg-black/60 text-white w-7 h-7 flex items-center justify-center hover:bg-black/80"
-                        title="Remove image"
-                      >
-                        ✕
-                      </button>
-                      <div className="absolute bottom-2 left-2 text-[11px] px-2 py-0.5 rounded-full bg-black/60 text-white">
-                        {image.type === 'current' ? 'Current' : 'New'}
-                      </div>
+                      ✕
+                    </button>
+                    <div className="absolute bottom-2 left-2 text-[11px] px-2 py-0.5 rounded-full bg-black/60 text-white">
+                      {image.type === 'current' ? 'Current' : 'New'}
                     </div>
-                  ))}
-                </div>
-                {images.length > 1 && (
-                  <div className="absolute inset-y-0 left-0 flex items-center">
-                    <button
-                      type="button"
-                      onClick={() => scrollCarousel('left')}
-                      className="ml-1 rounded-full bg-white/80 text-slate-700 w-7 h-7 flex items-center justify-center shadow"
-                      title="Scroll left"
-                    >
-                      ‹
-                    </button>
                   </div>
-                )}
-                {images.length > 1 && (
-                  <div className="absolute inset-y-0 right-0 flex items-center">
-                    <button
-                      type="button"
-                      onClick={() => scrollCarousel('right')}
-                      className="mr-1 rounded-full bg-white/80 text-slate-700 w-7 h-7 flex items-center justify-center shadow"
-                      title="Scroll right"
-                    >
-                      ›
-                    </button>
-                  </div>
-                )}
+                ))}
               </div>
-            ) : (
+              {images.length > 1 && (
+                <div className="absolute inset-y-0 left-0 flex items-center">
+                  <button
+                    type="button"
+                    onClick={() => scrollCarousel('left')}
+                    className="ml-1 rounded-full bg-white/80 text-slate-700 w-7 h-7 flex items-center justify-center shadow"
+                    title="Scroll left"
+                  >
+                    ‹
+                  </button>
+                </div>
+              )}
+              {images.length > 1 && (
+                <div className="absolute inset-y-0 right-0 flex items-center">
+                  <button
+                    type="button"
+                    onClick={() => scrollCarousel('right')}
+                    className="mr-1 rounded-full bg-white/80 text-slate-700 w-7 h-7 flex items-center justify-center shadow"
+                    title="Scroll right"
+                  >
+                    ›
+                  </button>
+                </div>
+              )}
+            </div>
+            {images.length === 0 && (
               <p className="text-xs text-slate-400">No image attached.</p>
             )}
             {images.length > 1 && (
