@@ -32,14 +32,25 @@ export class AiService {
 
     try {
       const model = this.genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
-      const prompt = `Analyze the following post and generate between 10 and 30 relevant topic tags.
-Return ONLY a JSON array of lowercase tag strings (1 to 3 words each). No explanation, no markdown, just the raw JSON array.
-You MUST return at least 10 tags. Cover the main topics, sub-topics, themes, concepts, and related fields — aim for variety so the post can be found through many different searches.
-IMPORTANT: Return tags in the SAME language as the post content. If the post is in Hebrew, return Hebrew tags. If in English, return English tags.
-Example for English: ["machine learning", "python", "data science", "neural networks", "ai", "programming", "algorithms", "statistics", "deep learning", "model training"]
-Example for Hebrew: ["למידת מכונה", "פייתון", "מדע הנתונים", "רשתות נוירונים", "בינה מלאכותית", "תכנות", "אלגוריתמים", "סטטיסטיקה", "עיבוד נתונים", "מודלים"]
+      const prompt = `You are tagging posts for a student knowledge-sharing platform. Generate 10 to 30 high-quality search tags for the post below.
 
-Post content: ${content}`;
+Think across these categories to ensure good coverage:
+1. Academic field / subject (e.g. "mathematics", "computer science", "biology", "history")
+2. Specific topic (e.g. "derivatives", "binary search", "photosynthesis", "world war 2")
+3. Parent / related concepts — CRITICAL: if the post is about geometry, also add "math"; if about sorting algorithms, also add "programming" and "computer science"
+4. Content type (e.g. "study tip", "exam prep", "homework help", "explanation", "summary", "question")
+5. Practical context (e.g. "university", "high school", "beginner", "finals", "deadline")
+
+Rules:
+- Each tag must be 1 to 3 words, lowercase
+- Include BOTH specific tags AND their broad parent fields — this is the most important rule for search quality
+- No filler tags like "post", "content", "topic", "information"
+- Return ONLY a raw JSON array of strings — no explanation, no markdown
+
+IMPORTANT: Return tags in the SAME language as the post. Hebrew post → Hebrew tags. English post → English tags.
+
+Post content:
+${content}`;
 
       const result = await model.generateContent(prompt);
       const text = result.response.text().trim().replace(/```json|```/g, '').trim();
