@@ -92,6 +92,7 @@
     "cookie-parser": "^1.4.7",
     "firebase": "^12.9.0",
     "firebase-admin": "^13.6.1",
+    "groq-sdk": "^0.37.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^9.1.5",
     "passport": "^0.7.0",

@@ -1,21 +1,29 @@
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import Groq from 'groq-sdk';
 
 @Injectable()
 export class AiService {
   private readonly logger = new Logger(AiService.name);
   private genAI: GoogleGenerativeAI;
+  private groq: Groq;
   private _quotaExceeded = false;
 
   constructor() {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (apiKey) {
-      this.logger.log(
-        `Initializing Gemini AI with Key: ${apiKey.substring(0, 4)}...`,
-      );
-      this.genAI = new GoogleGenerativeAI(apiKey);
+    const geminiKey = process.env.GEMINI_API_KEY;
+    if (geminiKey) {
+      this.logger.log(`Initializing Gemini AI with Key: ${geminiKey.substring(0, 4)}...`);
+      this.genAI = new GoogleGenerativeAI(geminiKey);
     } else {
-      this.logger.warn('GEMINI_API_KEY not found. AI features will be mocked.');
+      this.logger.warn('GEMINI_API_KEY not found. Embeddings and search expansion will be unavailable.');
+    }
+
+    const groqKey = process.env.GROQ_API_KEY;
+    if (groqKey) {
+      this.logger.log(`Initializing Groq with Key: ${groqKey.substring(0, 4)}...`);
+      this.groq = new Groq({ apiKey: groqKey });
+    } else {
+      this.logger.warn('GROQ_API_KEY not found. Tag generation will use keyword fallback.');
     }
   }
 
@@ -26,13 +34,11 @@ export class AiService {
   }
 
   async generateTags(content: string): Promise<string[]> {
-    if (!this.genAI) {
+    if (!this.groq) {
       return this.extractKeywordsFallback(content);
     }
 
-    try {
-      const model = this.genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
-      const prompt = `You are tagging posts for a student knowledge-sharing platform. Generate 10 to 30 high-quality search tags for the post below.
+    const prompt = `You are tagging posts for a student knowledge-sharing platform. Generate 10 to 30 high-quality search tags for the post below.
 
 Think across these categories to ensure good coverage:
 1. Academic field / subject (e.g. "mathematics", "computer science", "biology", "history")
@@ -43,27 +49,34 @@ Think across these categories to ensure good coverage:
 
 Rules:
 - Each tag must be 1 to 3 words, lowercase
-- Include BOTH specific tags AND their broad parent fields — this is the most important rule for search quality
+- Include BOTH specific tags AND their broad parent fields — most important rule for search quality
 - No filler tags like "post", "content", "topic", "information"
-- Return ONLY a raw JSON array of strings — no explanation, no markdown
+- Return ONLY a raw JSON array of strings — no explanation, no markdown, no code block
 
 IMPORTANT: Return tags in the SAME language as the post. Hebrew post → Hebrew tags. English post → English tags.
 
 Post content:
 ${content}`;
 
-      const result = await model.generateContent(prompt);
-      const text = result.response.text().trim().replace(/```json|```/g, '').trim();
+    try {
+      const completion = await this.groq.chat.completions.create({
+        model: 'llama-3.3-70b-versatile',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.3,
+      });
+
+      const text = completion.choices[0]?.message?.content?.trim().replace(/```json|```/g, '').trim();
       const tags = JSON.parse(text) as string[];
 
       if (!Array.isArray(tags)) throw new Error('Response is not an array');
+      this.logger.log(`Generated ${tags.length} tags via Groq`);
       return tags.slice(0, 30).map((t) => t.toLowerCase().trim());
     } catch (error) {
       if (error instanceof Error && error.message.includes('429')) {
-        this.logger.warn('Gemini daily quota exceeded — using keyword fallback for tags');
+        this.logger.warn('Groq rate limit hit — using keyword fallback for tags');
         this._quotaExceeded = true;
       } else {
-        this.logger.error('Failed to generate tags with Gemini', error);
+        this.logger.error('Failed to generate tags with Groq', error);
       }
       return this.extractKeywordsFallback(content);
     }
