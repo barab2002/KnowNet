@@ -160,8 +160,17 @@ export const getTotalLikesForUser = async (userId: string): Promise<number> => {
   return response.data.totalLikes;
 };
 
-export const searchPosts = async (query: string): Promise<Post[]> => {
-  const response = await axios.get<Post[]>(`${API_URL}/search`, {
+export interface SearchResultPost extends Post {
+  matchedTags: string[];
+}
+
+export interface SearchResponse {
+  expandedTags: string[];
+  results: SearchResultPost[];
+}
+
+export const searchPosts = async (query: string): Promise<SearchResponse> => {
+  const response = await axios.get<SearchResponse>(`${API_URL}/search`, {
     params: { q: query },
   });
   return response.data;

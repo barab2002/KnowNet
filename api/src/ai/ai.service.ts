@@ -44,6 +44,31 @@ Post content: ${content}`;
     }
   }
 
+  async expandSearchQuery(query: string): Promise<string[]> {
+    if (!this.genAI) {
+      return query.toLowerCase().split(/\s+/).filter((w) => w.length > 2);
+    }
+
+    try {
+      const model = this.genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+      const prompt = `Given this search query, generate 10 to 20 relevant topic tags that would help find related posts.
+Return ONLY a JSON array of short, lowercase tag strings (1 to 3 words each). No explanation, no markdown, just the raw JSON array.
+Example: for "how to study better" return ["study tips", "studying", "learning", "focus", "productivity", "academic", "exam prep", "time management", "memory", "concentration"]
+
+Search query: ${query}`;
+
+      const result = await model.generateContent(prompt);
+      const text = result.response.text().trim().replace(/```json|```/g, '').trim();
+      const tags = JSON.parse(text) as string[];
+
+      if (!Array.isArray(tags)) throw new Error('Response is not an array');
+      return tags.slice(0, 20).map((t) => t.toLowerCase().trim());
+    } catch (error) {
+      this.logger.error('Failed to expand search query with Gemini', error);
+      return query.toLowerCase().split(/\s+/).filter((w) => w.length > 2);
+    }
+  }
+
   private extractKeywordsFallback(content: string): string[] {
     const stopWords = new Set([
       'about', 'there', 'their', 'would', 'could', 'should', 'which',

@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { searchPosts, Post } from '../../api/posts';
+import { searchPosts, SearchResultPost } from '../../api/posts';
 
 export const SemanticSearchPage = () => {
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState<Post[]>([]);
+  const [results, setResults] = useState<SearchResultPost[]>([]);
+  const [expandedTags, setExpandedTags] = useState<string[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
 
@@ -13,7 +14,8 @@ export const SemanticSearchPage = () => {
     setIsSearching(true);
     setHasSearched(true);
     try {
-      const posts = await searchPosts(query);
+      const { expandedTags: tags, results: posts } = await searchPosts(query);
+      setExpandedTags(tags);
       setResults(posts);
     } catch (error) {
       console.error('Search failed:', error);
@@ -79,21 +81,37 @@ export const SemanticSearchPage = () => {
           ✨ Understanding context, intent, and community sentiment
         </p>
 
+        {/* AI Expanded Tags */}
+        {hasSearched && !isSearching && expandedTags.length > 0 && (
+          <div className="mt-6 bg-primary/5 border border-primary/20 rounded-xl p-4">
+            <div className="flex items-center gap-2 text-primary text-xs font-bold mb-2 uppercase tracking-wider">
+              <span className="material-symbols-outlined text-sm">
+                colors_spark
+              </span>
+              AI searched for these topics
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {expandedTags.map((tag, idx) => (
+                <span
+                  key={idx}
+                  className="text-xs font-semibold text-primary bg-primary/10 border border-primary/20 px-2 py-1 rounded-full"
+                >
+                  #{tag}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Results Section */}
         {hasSearched && (
-          <div className="mt-12 space-y-6">
+          <div className="mt-8 space-y-6">
             <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#233648] pb-4">
               <h3 className="text-lg font-bold leading-tight tracking-tight">
                 {results.length > 0
                   ? `Found ${results.length} Results`
                   : 'No results found'}
               </h3>
-              <div className="flex gap-4">
-                <select className="bg-transparent border-none text-sm text-slate-500 dark:text-[#92adc9] focus:ring-0">
-                  <option>Sort by: Relevance</option>
-                  <option>Sort by: Newest</option>
-                </select>
-              </div>
             </div>
 
             {results.map((post) => (
@@ -128,6 +146,14 @@ export const SemanticSearchPage = () => {
                       </p>
                     </div>
                   </div>
+                  {post.matchedTags.length > 0 && (
+                    <div className="flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400 font-semibold bg-emerald-50 dark:bg-emerald-900/20 px-2 py-1 rounded-full">
+                      <span className="material-symbols-outlined text-xs">
+                        verified
+                      </span>
+                      {post.matchedTags.length} tag{post.matchedTags.length > 1 ? 's' : ''} matched
+                    </div>
+                  )}
                 </div>
 
                 {post.imageUrl && (
@@ -161,14 +187,26 @@ export const SemanticSearchPage = () => {
                 )}
 
                 <div className="flex flex-wrap gap-2 mb-4">
-                  {post.tags.map((tag, idx) => (
-                    <span
-                      key={idx}
-                      className="text-xs font-semibold text-primary bg-primary/10 px-2 py-1 rounded"
-                    >
-                      #{tag}
-                    </span>
-                  ))}
+                  {post.tags.map((tag, idx) => {
+                    const isMatched = post.matchedTags.includes(tag);
+                    return (
+                      <span
+                        key={idx}
+                        className={`text-xs font-semibold px-2 py-1 rounded ${
+                          isMatched
+                            ? 'text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-900/30 border border-emerald-300 dark:border-emerald-700'
+                            : 'text-primary bg-primary/10'
+                        }`}
+                      >
+                        #{tag}
+                        {isMatched && (
+                          <span className="material-symbols-outlined text-[10px] ml-1 align-middle">
+                            check
+                          </span>
+                        )}
+                      </span>
+                    );
+                  })}
                 </div>
 
                 <div className="flex items-center gap-4 text-slate-400">

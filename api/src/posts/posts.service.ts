@@ -288,11 +288,24 @@ export class PostsService {
     return result.length > 0 ? result[0].totalLikes : 0;
   }
 
-  async search(query: string): Promise<Post[]> {
-    return this.postModel
-      .find({ $text: { $search: query } }, { score: { $meta: 'textScore' } })
-      .sort({ score: { $meta: 'textScore' } })
+  async search(query: string): Promise<{ expandedTags: string[]; results: Array<Record<string, unknown> & { matchedTags: string[] }> }> {
+    const expandedTags = await this.aiService.expandSearchQuery(query);
+
+    const posts = await this.postModel
+      .find({ tags: { $in: expandedTags } })
+      .populate('authorId', 'name profileImageUrl')
+      .sort({ createdAt: -1 })
+      .lean()
       .exec();
+
+    const results = posts
+      .map((post) => ({
+        ...post,
+        matchedTags: (post.tags as string[]).filter((tag) => expandedTags.includes(tag)),
+      }))
+      .sort((a, b) => b.matchedTags.length - a.matchedTags.length);
+
+    return { expandedTags, results };
   }
 
   async summarizePost(postId: string, userId?: string): Promise<Post> {
