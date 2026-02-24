@@ -1,82 +1,77 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { UnauthorizedException } from '@nestjs/common';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { Response } from 'express';
+import { FirebaseService } from './firebase.service';
 
 describe('AuthController', () => {
   let controller: AuthController;
-  let authService: AuthService;
 
   const mockAuthService = {
-    validateGoogleUser: jest.fn(),
+    validateFirebaseUser: jest.fn(),
     login: jest.fn(),
+  };
+
+  const mockFirebaseService = {
+    verifyIdToken: jest.fn(),
   };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AuthController],
-      providers: [{ provide: AuthService, useValue: mockAuthService }],
+      providers: [
+        { provide: AuthService, useValue: mockAuthService },
+        { provide: FirebaseService, useValue: mockFirebaseService },
+      ],
     }).compile();
 
     controller = module.get<AuthController>(AuthController);
-    authService = module.get<AuthService>(AuthService);
   });
 
   afterEach(() => {
     jest.clearAllMocks();
   });
 
-  describe('googleAuth', () => {
-    it('should be defined', async () => {
-      // It's a guard protected route, void body
-      expect(await controller.googleAuth({})).toBeUndefined();
+  describe('firebaseAuth', () => {
+    it('should throw UnauthorizedException when no idToken provided', async () => {
+      await expect(controller.firebaseAuth({ idToken: '' })).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
-    it('should handle call (no-op)', async () => {
-      // Technically nothing to fail here as it's empty
-      const result = await controller.googleAuth({});
-      expect(result).toBeUndefined();
-    });
-  });
+    it('should return access_token and user on valid token', async () => {
+      const decodedToken = { uid: 'uid1', email: 'test@test.com', name: 'John' };
+      const user = { _id: 'uid1', email: 'test@test.com', name: 'John' };
+      const loginResult = { access_token: 'jwt-token', user };
 
-  describe('googleAuthRedirect', () => {
-    it('should redirect to frontend with token', async () => {
-      const req = { user: { googleId: '123' } };
-      const res = { redirect: jest.fn() } as unknown as Response;
-      const user = { _id: '123' };
+      mockFirebaseService.verifyIdToken.mockResolvedValue(decodedToken);
+      mockAuthService.validateFirebaseUser.mockResolvedValue(user);
+      mockAuthService.login.mockResolvedValue(loginResult);
 
-      mockAuthService.validateGoogleUser.mockResolvedValue(user);
-      mockAuthService.login.mockResolvedValue({ access_token: 'jwt-token' });
+      const result = await controller.firebaseAuth({ idToken: 'valid-firebase-token' });
 
-      await controller.googleAuthRedirect(req, res);
-
-      expect(mockAuthService.validateGoogleUser).toHaveBeenCalledWith(req.user);
+      expect(mockFirebaseService.verifyIdToken).toHaveBeenCalledWith('valid-firebase-token');
+      expect(mockAuthService.validateFirebaseUser).toHaveBeenCalledWith(decodedToken);
       expect(mockAuthService.login).toHaveBeenCalledWith(user);
-      expect(res.redirect).toHaveBeenCalledWith(
-        expect.stringContaining('?token=jwt-token'),
-      );
+      expect(result).toBe(loginResult);
     });
 
-    it('should throw if auth service fails', async () => {
-      const req = { user: {} };
-      const res = { redirect: jest.fn() } as unknown as Response;
-      mockAuthService.validateGoogleUser.mockRejectedValue(
-        new Error('Auth failed'),
-      );
+    it('should throw UnauthorizedException when Firebase verification fails', async () => {
+      mockFirebaseService.verifyIdToken.mockRejectedValue(new Error('Invalid token'));
 
-      await expect(controller.googleAuthRedirect(req, res)).rejects.toThrow(
-        'Auth failed',
-      );
+      await expect(
+        controller.firebaseAuth({ idToken: 'bad-token' }),
+      ).rejects.toThrow(UnauthorizedException);
     });
   });
 
   describe('getProfile', () => {
     it('should return user from req', () => {
-      const req = { user: { id: 1 } };
+      const req = { user: { _id: '1', email: 'test@test.com' } };
       expect(controller.getProfile(req)).toBe(req.user);
     });
 
-    it('should succeed even if user is undefined (guard handles protection)', () => {
+    it('should return undefined if user is not set (guard handles protection)', () => {
       const req = { user: undefined };
       expect(controller.getProfile(req)).toBeUndefined();
     });
