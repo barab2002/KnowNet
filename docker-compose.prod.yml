@@ -1,22 +1,13 @@
 services:
   api:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: ghcr.io/barab2002/knownet-api:latest
     container_name: knownet-api
     env_file: .env.production
     network_mode: host
     restart: always
 
   client:
-    build:
-      context: .
-      dockerfile: Dockerfile.client
-      args:
-        VITE_FIREBASE_API_KEY: ${VITE_FIREBASE_API_KEY}
-        VITE_FIREBASE_AUTH_DOMAIN: ${VITE_FIREBASE_AUTH_DOMAIN}
-        VITE_FIREBASE_PROJECT_ID: ${VITE_FIREBASE_PROJECT_ID}
-        VITE_FIREBASE_APP_ID: ${VITE_FIREBASE_APP_ID}
+    image: ghcr.io/barab2002/knownet-client:latest
     container_name: knownet-client
     network_mode: host
     depends_on:
