@@ -79,11 +79,14 @@ export class PostsService {
   }
 
   private async buildAiMetadata(content: string) {
-    // Run summary and tag generation in parallel
-    const [summary, aiTags] = await Promise.all([
+    // Run summary and tag generation in parallel — use allSettled so one failure doesn't kill the other
+    const [summaryResult, aiTagsResult] = await Promise.allSettled([
       this.aiService.generateSummary(content),
       this.aiService.generateTags(content),
     ]);
+
+    const summary = summaryResult.status === 'fulfilled' ? summaryResult.value : '';
+    const aiTags = aiTagsResult.status === 'fulfilled' ? aiTagsResult.value : [];
 
     // User-defined hashtags extracted from content
     const hashtags = content.match(/#(\w+)/g);
