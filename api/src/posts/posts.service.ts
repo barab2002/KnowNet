@@ -63,17 +63,14 @@ export class PostsService {
       this.incrementPostCount(authorId);
     }
 
-    // 2. Run AI processing synchronously so tags are ready when the post is returned
-    try {
-      const { summary, tags, userTags, aiTags } = await this.buildAiMetadata(content);
-      await this.postModel.findByIdAndUpdate(createdPost._id, { summary, tags, userTags, aiTags });
-      createdPost.summary = summary;
-      createdPost.tags = tags;
-      createdPost.userTags = userTags;
-      createdPost.aiTags = aiTags;
-    } catch (err) {
-      this.logger.error(`AI processing failed for post ${createdPost._id}`, err);
-    }
+    // 2. Run AI processing in background — post is returned immediately, tags arrive shortly after
+    this.buildAiMetadata(content)
+      .then(({ summary, tags, userTags, aiTags }) =>
+        this.postModel.findByIdAndUpdate(createdPost._id, { summary, tags, userTags, aiTags }),
+      )
+      .catch((err) =>
+        this.logger.error(`AI processing failed for post ${createdPost._id}`, err),
+      );
 
     return createdPost;
   }
