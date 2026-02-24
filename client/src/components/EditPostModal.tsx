@@ -111,7 +111,7 @@ export const EditPostModal: React.FC<EditPostModalProps> = ({
                   ref={carouselRef}
                   className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scroll-smooth"
                 >
-                  <label className="relative min-w-[240px] snap-start rounded-lg overflow-hidden border-2 border-dashed border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800/60 flex items-center justify-center cursor-pointer">
+                  <label className="relative min-w-[200px] snap-start rounded-lg overflow-hidden border-2 border-dashed border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800/60 flex items-center justify-center cursor-pointer">
                     <input
                       type="file"
                       accept="image/*"
@@ -120,7 +120,7 @@ export const EditPostModal: React.FC<EditPostModalProps> = ({
                       }
                       className="hidden"
                     />
-                    <span className="text-4xl text-slate-400">+</span>
+                    <span className="text-2xl text-slate-400">+</span>
                   </label>
                   {images.map((image) => (
                     <div
