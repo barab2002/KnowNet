@@ -10,6 +10,7 @@ describe('AuthController', () => {
   const mockAuthService = {
     validateFirebaseUser: jest.fn(),
     login: jest.fn(),
+    generateRefreshToken: jest.fn(),
   };
 
   const mockFirebaseService = {
@@ -49,6 +50,7 @@ describe('AuthController', () => {
       mockFirebaseService.verifyIdToken.mockResolvedValue(decodedToken);
       mockAuthService.validateFirebaseUser.mockResolvedValue(user);
       mockAuthService.login.mockResolvedValue(loginResult);
+      mockAuthService.generateRefreshToken.mockResolvedValue('refresh-token');
 
       const result = await controller.firebaseAuth(
         { idToken: 'valid-firebase-token' },

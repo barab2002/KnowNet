@@ -14,7 +14,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
-import { Express } from 'express';
+import type { Multer } from 'multer';
 import {
   ApiBearerAuth,
   ApiBody,
@@ -302,7 +302,7 @@ export class PostsController {
   async create(
     @Body() createPostDto: CreatePostDto,
     @Req() req,
-    @UploadedFiles() images?: Express.Multer.File[],
+    @UploadedFiles() images?: Multer.File[],
   ) {
     // Enforce authorId from token
     createPostDto.authorId = req.user._id;
@@ -360,7 +360,7 @@ export class PostsController {
     @Param('id') id: string,
     @Body() body: UpdatePostDto,
     @Req() req,
-    @UploadedFiles() images?: Express.Multer.File[],
+    @UploadedFiles() images?: Multer.File[],
   ) {
     const files = images?.length
       ? images.map((image) => ({ buffer: image.buffer, mimetype: image.mimetype }))
