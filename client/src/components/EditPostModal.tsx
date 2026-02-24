@@ -111,6 +111,17 @@ export const EditPostModal: React.FC<EditPostModalProps> = ({
                   ref={carouselRef}
                   className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scroll-smooth"
                 >
+                  <label className="relative min-w-[240px] snap-start rounded-lg overflow-hidden border-2 border-dashed border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800/60 flex items-center justify-center cursor-pointer">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) =>
+                        setSelectedImage(e.target.files?.[0] || undefined)
+                      }
+                      className="hidden"
+                    />
+                    <span className="text-4xl text-slate-400">+</span>
+                  </label>
                   {images.map((image) => (
                     <div
                       key={image.key}
@@ -168,24 +179,6 @@ export const EditPostModal: React.FC<EditPostModalProps> = ({
               </div>
             ) : (
               <p className="text-xs text-slate-400">No image attached.</p>
-            )}
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) =>
-                setSelectedImage(e.target.files?.[0] || undefined)
-              }
-              className="text-sm text-slate-500"
-            />
-            {initialImageUrl && (
-              <label className="flex items-center gap-2 text-xs text-slate-500">
-                <input
-                  type="checkbox"
-                  checked={removeImage}
-                  onChange={(e) => setRemoveImage(e.target.checked)}
-                />
-                Remove current image
-              </label>
             )}
             {images.length > 1 && (
               <p className="text-[11px] text-slate-400">
