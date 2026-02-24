@@ -189,19 +189,22 @@ export class AiService {
       'actually',
     ]);
 
+    const words: string[] = [];
+    for (const t of tags) {
+      const cleaned = t.toLowerCase().replace(/[\.#,;:"'()[\]{}]/g, '').trim();
+      // Split multi-word tags (spaces or hyphens) into individual words
+      const split = cleaned.split(/[\s\-_]+/).filter(Boolean);
+      words.push(...split);
+    }
+
     return [
       ...new Set(
-        tags
-          .map((t) =>
-            t
-              .toLowerCase()
-              .replace(/[\.#]/g, '') // remove common artifacts
-              .trim(),
-          )
-          .filter((t) => t.length > 2 && t.length < 35)
-          .filter((t) => !genericNoise.has(t)),
+        words
+          .filter((w) => w.length > 2 && w.length < 30)
+          .filter((w) => !genericNoise.has(w))
+          .filter((w) => /^[\p{L}\d]+$/u.test(w)), // letters and digits only
       ),
-    ].slice(0, 15);
+    ].slice(0, 25);
   }
 
   async expandSearchQuery(query: string): Promise<string[]> {

@@ -450,7 +450,14 @@ export class PostsService {
   async search(query: string): Promise<{
     expandedTags: string[];
     queryWords: string[];
-    results: Array<Record<string, unknown> & { matchedTags: string[] }>;
+    results: Array<
+      Record<string, unknown> & {
+        matchedTags: string[];
+        exactMatchedTags: string[];
+        containsMatchedTags: string[];
+        textMatchExact: boolean;
+      }
+    >;
   }> {
     const startTime = Date.now();
     const cleanedQuery = query.toLowerCase().trim();
@@ -546,6 +553,21 @@ export class PostsService {
           { tags: { $in: [...expandedTags, ...queryWords] } },
           { aiTags: { $in: queryWords } },
           { userTags: { $in: queryWords } },
+          // Tag contains: e.g. query "marine" matches tag "marine-biology"
+          ...(queryWords.length > 0
+            ? [
+                {
+                  tags: {
+                    $elemMatch: {
+                      $regex: queryWords
+                        .map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+                        .join('|'),
+                      $options: 'i',
+                    },
+                  },
+                },
+              ]
+            : []),
           ...(query.length < 4
             ? [
                 {
@@ -581,11 +603,15 @@ export class PostsService {
     // 5. Advanced Scoring Fusion
     const scored = allCandidates.map((post) => {
       const content = (post.content || '').toLowerCase();
+      // Deduplicate: post.tags is already the union of aiTags + userTags,
+      // so combining all three creates duplicates that inflate the match counter.
       const postTags = [
-        ...(post.tags || []),
-        ...(post.aiTags || []),
-        ...(post.userTags || []),
-      ] as string[];
+        ...new Set([
+          ...(post.tags || []),
+          ...(post.aiTags || []),
+          ...(post.userTags || []),
+        ] as string[]),
+      ];
 
       // Vector Score (Semantic)
       const postEmbedding = post.embedding as unknown as number[] | undefined;
@@ -594,43 +620,76 @@ export class PostsService {
           ? this.cosineSimilarity(queryEmbedding, postEmbedding)
           : 0;
 
-      // Match Score (Text)
+      // Match Score (Text + Tags)
+      const tagsText = postTags.join(' ').toLowerCase();
+      const searchable = `${content} ${tagsText}`;
       let mScore = 0;
-      if (content.includes(cleanedQuery)) {
+      if (content.includes(cleanedQuery) || tagsText.includes(cleanedQuery)) {
         mScore = 0.95;
-      } else if (content.includes(softCleanedQuery)) {
-        mScore = 0.9; // High score for punctuation-free match (e.g., 'fish' matching 'fish?')
-      } else if (rawRegex && rawRegex.test(content)) {
+      } else if (
+        content.includes(softCleanedQuery) ||
+        tagsText.includes(softCleanedQuery)
+      ) {
+        mScore = 0.9;
+      } else if (
+        rawRegex &&
+        (rawRegex.test(content) || rawRegex.test(tagsText))
+      ) {
         mScore = 0.9;
       } else {
-        const hits = wordRegexes.filter((r) => r.test(content)).length;
-        // Significant boost for matching any keywords from the query
+        const hits = wordRegexes.filter((r) => r.test(searchable)).length;
         mScore = wordRegexes.length ? (hits / wordRegexes.length) * 0.75 : 0;
       }
 
-      // Tag Score
-      const matchedTags = postTags.filter(
-        (t) => expandedTags.includes(t) || queryWords.includes(t),
+      // Tag Score — exact match > contains match > expanded match
+      const exactMatchedTags = postTags.filter((t) =>
+        queryWords.some((w) => t.toLowerCase() === w.toLowerCase()),
       );
+      const containsMatchedTags = postTags.filter((t) => {
+        if (exactMatchedTags.includes(t)) return false;
+        const tl = t.toLowerCase();
+        return (
+          queryWords.some((w) => tl.includes(w) || w.includes(tl)) ||
+          expandedTags.some((et) => tl === et.toLowerCase())
+        );
+      });
+      const matchedTags = [...exactMatchedTags, ...containsMatchedTags];
+
+      // tScore kept only for debug display
       const tScore =
-        matchedTags.length > 0
-          ? Math.min(0.4 + matchedTags.length * 0.2, 1.0)
-          : 0;
+        exactMatchedTags.length > 0
+          ? Math.min(exactMatchedTags.length / 5, 1.0)
+          : Math.min(containsMatchedTags.length / 7, 0.7);
 
-      // Final Fusion
-      let score = 0;
-      if (vScore > 0) {
-        score = vScore * 0.5 + mScore * 0.4 + tScore * 0.1;
-        if (mScore >= 0.75 && score < mScore) score = mScore;
-      } else {
-        score = mScore * 0.75 + tScore * 0.25;
-      }
+      // ── Scoring ──────────────────────────────────────────────────────────
+      // Normalize tag quality to [0, 1]:
+      //   exact:   1 tag → 0.6 │ 5+ tags → 1.0
+      //   contains: 1 tag → 0.23 │ 4+ tags → 0.47
+      const tagQuality =
+        exactMatchedTags.length > 0
+          ? Math.min(0.5 + exactMatchedTags.length * 0.1, 1.0)
+          : containsMatchedTags.length > 0
+            ? Math.min(0.15 + containsMatchedTags.length * 0.08, 0.5)
+            : 0;
 
-      // Freshness bonus (max +0.05)
+      // Peak signal: best single dimension (keeps weak posts from inflating)
+      const peak = Math.max(tagQuality, vScore, mScore);
+
+      // Continuous weighted blend — no discontinuous if/else branches
+      // Weights: peak anchors (40 %), tags (30 %), vector (20 %), text (10 %)
       const ageDays =
         (Date.now() - new Date(post.createdAt).getTime()) /
         (1000 * 60 * 60 * 24);
-      score += Math.max(0, 1 - ageDays / 180) * 0.05;
+      const freshnessBonus = Math.max(0, 1 - ageDays / 180) * 0.04;
+
+      const score = Math.min(
+        peak * 0.4 +
+          tagQuality * 0.3 +
+          vScore * 0.2 +
+          mScore * 0.1 +
+          freshnessBonus,
+        1.0,
+      );
 
       // Snippet Generation
       let snippet = '';
@@ -650,14 +709,32 @@ export class PostsService {
         ...post,
         _score: score,
         matchedTags,
+        exactMatchedTags,
+        containsMatchedTags,
+        textMatchExact: mScore >= 0.9, // true for full phrase / near-exact hit
         matchSnippet: snippet,
         _debug: { vScore, mScore, tScore },
       };
     });
 
     const results = scored
-      .filter((p) => p._score >= 0.5)
-      .sort((a, b) => b._score - a._score)
+      .filter((p) => p.matchedTags.length > 0 || p._score >= 0.15)
+      .sort((a, b) => {
+        // 1. Exact tag matches (most first)
+        const exactTagDiff =
+          b.exactMatchedTags.length - a.exactMatchedTags.length;
+        if (exactTagDiff !== 0) return exactTagDiff;
+        // 2. Contains tag matches (most first)
+        const containsTagDiff =
+          b.containsMatchedTags.length - a.containsMatchedTags.length;
+        if (containsTagDiff !== 0) return containsTagDiff;
+        // 3. Exact text match (true before false)
+        const exactTextDiff =
+          (b.textMatchExact ? 1 : 0) - (a.textMatchExact ? 1 : 0);
+        if (exactTextDiff !== 0) return exactTextDiff;
+        // 4. Relevance score (vector + partial text)
+        return b._score - a._score;
+      })
       .slice(0, 50);
 
     this.logger.log(
