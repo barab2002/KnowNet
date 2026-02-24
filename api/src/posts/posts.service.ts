@@ -137,12 +137,17 @@ export class PostsService {
     content?: string,
     imageBuffer?: Buffer,
     mimetype?: string,
+    removeImage?: boolean,
   ): Promise<Post> {
     const post = await this.postModel.findById(postId);
     if (!post) throw new NotFoundException('Post not found');
 
     if (!post.authorId || post.authorId.toString() !== userId) {
       throw new ForbiddenException('Unauthorized to edit this post');
+    }
+
+    if (removeImage) {
+      post.imageUrl = undefined;
     }
 
     if (imageBuffer && mimetype) {
