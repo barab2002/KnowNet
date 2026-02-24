@@ -12,6 +12,9 @@ export class User {
   email: string;
 
   @Prop()
+  passwordHash?: string;
+
+  @Prop()
   googleId?: string;
 
   @Prop()
@@ -46,6 +49,26 @@ export class User {
 
   @Prop({ default: 0 })
   aiSummariesCount: number;
+
+  @Prop({
+    type: [
+      {
+        token: String,
+        createdAt: { type: Date, default: Date.now },
+        expiresAt: Date,
+        revoked: { type: Boolean, default: false },
+        replacedByToken: String,
+      },
+    ],
+    default: [],
+  })
+  refreshTokens: {
+    token: string;
+    createdAt: Date;
+    expiresAt: Date;
+    revoked?: boolean;
+    replacedByToken?: string;
+  }[];
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
