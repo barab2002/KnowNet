@@ -6,9 +6,11 @@ import {
   addComment,
   summarizePost,
   deletePost,
+  updatePost,
 } from '../api/posts';
 import { useAuth } from '../contexts/AuthContext';
 import { Modal } from './Modal';
+import { EditPostModal } from './EditPostModal';
 
 interface PostCardProps {
   post: Post;
@@ -27,6 +29,7 @@ export const PostCard = React.memo(
   const [localPost, setLocalPost] = useState(post);
   const [localSummary, setLocalSummary] = useState(post.summary);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   // Sync local summary if prop updates (e.g. from parent refresh)
   React.useEffect(() => {
@@ -124,6 +127,19 @@ export const PostCard = React.memo(
     }
   };
 
+  const handleEditSave = async (content: string) => {
+    try {
+      const updatedPost = await updatePost(post._id, { content });
+      setLocalPost(updatedPost);
+      setLocalSummary(updatedPost.summary);
+      setShowEditModal(false);
+      if (onUpdate) onUpdate();
+    } catch (err) {
+      console.error('Failed to update post', err);
+      setError('Failed to update post. Please try again.');
+    }
+  };
+
   return (
     <>
       <article className="bg-white dark:bg-card-dark rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden hover:border-primary/50 transition-colors">
@@ -156,15 +172,24 @@ export const PostCard = React.memo(
 
             <div className="flex items-center gap-2">
               {authorIdStr === currentUserId && (
-                <button
-                  onClick={() => setShowDeleteModal(true)}
-                  className="text-slate-400 hover:text-red-500 transition-colors p-1"
-                  title="Delete Post"
-                >
-                  <span className="material-icons-round text-xl">
-                    delete_outline
-                  </span>
-                </button>
+                <>
+                  <button
+                    onClick={() => setShowEditModal(true)}
+                    className="text-slate-400 hover:text-primary transition-colors p-1"
+                    title="Edit Post"
+                  >
+                    <span className="material-icons-round text-xl">edit</span>
+                  </button>
+                  <button
+                    onClick={() => setShowDeleteModal(true)}
+                    className="text-slate-400 hover:text-red-500 transition-colors p-1"
+                    title="Delete Post"
+                  >
+                    <span className="material-icons-round text-xl">
+                      delete_outline
+                    </span>
+                  </button>
+                </>
               )}
               {/* Removed menu button */}
             </div>
@@ -399,6 +424,13 @@ export const PostCard = React.memo(
           </div>
         </div>
       </Modal>
+
+      <EditPostModal
+        isOpen={showEditModal}
+        initialContent={localPost.content}
+        onClose={() => setShowEditModal(false)}
+        onSave={handleEditSave}
+      />
     </>
   );
 });
