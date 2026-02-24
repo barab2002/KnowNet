@@ -45,6 +45,7 @@ export const SemanticSearchPage = () => {
   };
 
   return (
+    <>
     <div className="flex flex-col items-center">
       <div className="w-full max-w-[960px] px-6 py-10">
         {/* Headline Section */}
@@ -266,6 +267,7 @@ export const SemanticSearchPage = () => {
       </div>,
       document.body
     )}
+    </>
   );
 };
 
