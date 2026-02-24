@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { Modal } from './Modal';
 
 interface EditPostModalProps {
@@ -22,6 +22,7 @@ export const EditPostModal: React.FC<EditPostModalProps> = ({
     undefined,
   );
   const [removeImage, setRemoveImage] = useState(false);
+  const carouselRef = useRef<HTMLDivElement | null>(null);
 
   React.useEffect(() => {
     if (isOpen) {
@@ -36,14 +37,38 @@ export const EditPostModal: React.FC<EditPostModalProps> = ({
   const isDisabled =
     trimmed.length === 0 || (!isContentChanged && !selectedImage && !removeImage);
   const previewUrl = useMemo(() => {
-    if (selectedImage) {
-      return URL.createObjectURL(selectedImage);
+    if (!selectedImage) return undefined;
+    return URL.createObjectURL(selectedImage);
+  }, [selectedImage]);
+
+  React.useEffect(() => {
+    return () => {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
+
+  const images = useMemo(() => {
+    const items: {
+      key: string;
+      src: string;
+      type: 'current' | 'new';
+    }[] = [];
+    if (initialImageUrl && !removeImage) {
+      items.push({ key: 'current', src: initialImageUrl, type: 'current' });
     }
-    if (removeImage) {
-      return undefined;
+    if (previewUrl) {
+      items.push({ key: 'new', src: previewUrl, type: 'new' });
     }
-    return initialImageUrl;
-  }, [selectedImage, initialImageUrl, removeImage]);
+    return items;
+  }, [initialImageUrl, removeImage, previewUrl]);
+
+  const scrollCarousel = (direction: 'left' | 'right') => {
+    if (!carouselRef.current) return;
+    const offset = direction === 'left' ? -280 : 280;
+    carouselRef.current.scrollBy({ left: offset, behavior: 'smooth' });
+  };
 
   const handleSave = async () => {
     if (isDisabled) return;
@@ -80,13 +105,66 @@ export const EditPostModal: React.FC<EditPostModalProps> = ({
             Post image
           </label>
           <div className="mt-2 space-y-2">
-            {previewUrl ? (
-              <div className="rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700">
-                <img
-                  src={previewUrl}
-                  alt="Post preview"
-                  className="w-full max-h-64 object-cover"
-                />
+            {images.length > 0 ? (
+              <div className="relative">
+                <div
+                  ref={carouselRef}
+                  className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scroll-smooth"
+                >
+                  {images.map((image) => (
+                    <div
+                      key={image.key}
+                      className="relative min-w-[240px] snap-start rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700"
+                    >
+                      <img
+                        src={image.src}
+                        alt="Post preview"
+                        className="w-full h-40 object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (image.type === 'current') {
+                            setRemoveImage(true);
+                          } else {
+                            setSelectedImage(undefined);
+                          }
+                        }}
+                        className="absolute top-2 right-2 rounded-full bg-black/60 text-white w-7 h-7 flex items-center justify-center hover:bg-black/80"
+                        title="Remove image"
+                      >
+                        ✕
+                      </button>
+                      <div className="absolute bottom-2 left-2 text-[11px] px-2 py-0.5 rounded-full bg-black/60 text-white">
+                        {image.type === 'current' ? 'Current' : 'New'}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {images.length > 1 && (
+                  <div className="absolute inset-y-0 left-0 flex items-center">
+                    <button
+                      type="button"
+                      onClick={() => scrollCarousel('left')}
+                      className="ml-1 rounded-full bg-white/80 text-slate-700 w-7 h-7 flex items-center justify-center shadow"
+                      title="Scroll left"
+                    >
+                      ‹
+                    </button>
+                  </div>
+                )}
+                {images.length > 1 && (
+                  <div className="absolute inset-y-0 right-0 flex items-center">
+                    <button
+                      type="button"
+                      onClick={() => scrollCarousel('right')}
+                      className="mr-1 rounded-full bg-white/80 text-slate-700 w-7 h-7 flex items-center justify-center shadow"
+                      title="Scroll right"
+                    >
+                      ›
+                    </button>
+                  </div>
+                )}
               </div>
             ) : (
               <p className="text-xs text-slate-400">No image attached.</p>
@@ -108,6 +186,11 @@ export const EditPostModal: React.FC<EditPostModalProps> = ({
                 />
                 Remove current image
               </label>
+            )}
+            {images.length > 1 && (
+              <p className="text-[11px] text-slate-400">
+                Scroll horizontally to switch between images.
+              </p>
             )}
           </div>
         </div>
