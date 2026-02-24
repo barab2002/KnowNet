@@ -75,6 +75,13 @@ export class PostsService {
       this.logger.error(`AI processing failed for post ${createdPost._id}`, err);
     }
 
+    // 3. Generate and store embedding in background (non-blocking)
+    this.aiService.generateEmbedding(content).then((embedding) => {
+      if (embedding.length > 0) {
+        this.postModel.findByIdAndUpdate(createdPost._id, { embedding }).exec();
+      }
+    }).catch((err) => this.logger.error(`Embedding generation failed for post ${createdPost._id}`, err));
+
     const aiQuotaExceeded = this.aiService.wasQuotaExceeded();
     return Object.assign(createdPost, { aiQuotaExceeded });
   }
@@ -293,9 +300,54 @@ export class PostsService {
   }
 
   async search(query: string): Promise<{ expandedTags: string[]; results: Array<Record<string, unknown> & { matchedTags: string[] }> }> {
-    const expandedTags = await this.aiService.expandSearchQuery(query);
+    // Run query embedding + tag expansion in parallel
+    const [queryEmbedding, expandedTags] = await Promise.all([
+      this.aiService.generateEmbedding(query),
+      this.aiService.expandSearchQuery(query),
+    ]);
 
-    // Run tag-based search and regex content search in parallel (allSettled so one failure doesn't kill the other)
+    const useVectorSearch = queryEmbedding.length > 0;
+
+    if (useVectorSearch) {
+      // Vector search: load posts that have embeddings, rank by cosine similarity
+      const embeddedPosts = await this.postModel
+        .find({ embedding: { $exists: true, $not: { $size: 0 } } })
+        .select('+embedding')
+        .populate('authorId', 'name profileImageUrl')
+        .lean()
+        .exec();
+
+      const scored = embeddedPosts
+        .map((post) => ({
+          ...post,
+          _score: this.cosineSimilarity(queryEmbedding, post.embedding as unknown as number[]),
+          matchedTags: (post.tags as string[]).filter((tag) => expandedTags.includes(tag)),
+        }))
+        .filter((p) => p._score > 0.5) // relevance threshold
+        .sort((a, b) => b._score - a._score);
+
+      // Also include non-embedded posts matched by tags (backward compat for older posts)
+      const embeddedIds = new Set(scored.map((p) => (p._id as { toString(): string }).toString()));
+      const tagPosts = expandedTags.length
+        ? await this.postModel
+            .find({ tags: { $in: expandedTags } })
+            .populate('authorId', 'name profileImageUrl')
+            .lean()
+            .exec()
+        : [];
+
+      const tagOnly = tagPosts
+        .filter((p) => !embeddedIds.has((p._id as { toString(): string }).toString()))
+        .map((post) => ({
+          ...post,
+          _score: 0,
+          matchedTags: (post.tags as string[]).filter((tag) => expandedTags.includes(tag)),
+        }));
+
+      return { expandedTags, results: [...scored, ...tagOnly] };
+    }
+
+    // Fallback: tag-based search + regex content search (allSettled so one failure doesn't kill the other)
     const regex = new RegExp(query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'iu');
     const [tagResult, contentResult] = await Promise.allSettled([
       this.postModel
@@ -313,7 +365,6 @@ export class PostsService {
     const tagPosts = tagResult.status === 'fulfilled' ? tagResult.value : [];
     const contentPosts = contentResult.status === 'fulfilled' ? contentResult.value : [];
 
-    // Merge and deduplicate by _id (tag results first for better ranking)
     const seen = new Set<string>();
     const merged = [...tagPosts, ...contentPosts].filter((post) => {
       const id = (post._id as { toString(): string }).toString();
@@ -330,6 +381,18 @@ export class PostsService {
       .sort((a, b) => b.matchedTags.length - a.matchedTags.length);
 
     return { expandedTags, results };
+  }
+
+  private cosineSimilarity(a: number[], b: number[]): number {
+    if (!a?.length || !b?.length || a.length !== b.length) return 0;
+    let dot = 0, normA = 0, normB = 0;
+    for (let i = 0; i < a.length; i++) {
+      dot += a[i] * b[i];
+      normA += a[i] * a[i];
+      normB += b[i] * b[i];
+    }
+    const denom = Math.sqrt(normA) * Math.sqrt(normB);
+    return denom === 0 ? 0 : dot / denom;
   }
 
   async summarizePost(postId: string, userId?: string): Promise<Post> {

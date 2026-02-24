@@ -99,6 +99,20 @@ Search query: ${query}`;
     return [...new Set(words)].slice(0, 5);
   }
 
+  async generateEmbedding(text: string): Promise<number[]> {
+    if (!this.genAI) {
+      return [];
+    }
+    try {
+      const model = this.genAI.getGenerativeModel({ model: 'text-embedding-004' });
+      const result = await model.embedContent(text);
+      return result.embedding.values;
+    } catch (error) {
+      this.logger.error('Failed to generate embedding', error);
+      return [];
+    }
+  }
+
   async generateSummary(
     content: string,
     accessToken?: string,
