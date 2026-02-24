@@ -167,7 +167,16 @@ export const getTotalLikesForUser = async (userId: string): Promise<number> => {
 
 export interface SearchResultPost extends Post {
   matchedTags: string[];
+  exactMatchedTags: string[];
+  containsMatchedTags: string[];
+  textMatchExact: boolean;
   matchSnippet?: string;
+  _score: number;
+  _debug: {
+    vScore: number;
+    mScore: number;
+    tScore: number;
+  };
 }
 
 export interface SearchResponse {
@@ -180,6 +189,18 @@ export const searchPosts = async (query: string): Promise<SearchResponse> => {
   const response = await axios.get<SearchResponse>(`${API_URL}/search`, {
     params: { q: query },
   });
+  return response.data;
+};
+
+// 2-minute in-memory cache for all unique tags
+let _tagsCache: { tags: string[]; expiresAt: number } | null = null;
+
+export const getAllTags = async (): Promise<string[]> => {
+  if (_tagsCache && Date.now() < _tagsCache.expiresAt) {
+    return _tagsCache.tags;
+  }
+  const response = await axios.get<string[]>(`${API_URL}/tags`);
+  _tagsCache = { tags: response.data, expiresAt: Date.now() + 2 * 60 * 1000 };
   return response.data;
 };
 
