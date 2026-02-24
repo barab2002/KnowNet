@@ -73,8 +73,6 @@ describe('PostsController', () => {
       expect(await controller.create(dto, req)).toBe(result);
       expect(mockPostsService.createWithImage).toHaveBeenCalledWith(
         expect.objectContaining({ authorId: 'user1' }),
-        '',
-        undefined,
         undefined,
       );
     });
@@ -83,11 +81,12 @@ describe('PostsController', () => {
       const dto: CreatePostDto = { content: 'test', authorId: 'user1' };
       const req = { user: { _id: 'user1' } };
       const image = { buffer: Buffer.from('img'), mimetype: 'image/png' };
+      const images = [image];
       const result = { _id: 'post1', ...dto, imageUrl: 'data:...' };
 
       mockPostsService.createWithImage.mockResolvedValue(result);
 
-      expect(await controller.create(dto, req, image)).toBe(result);
+      expect(await controller.create(dto, req, images)).toBe(result);
       expect(mockPostsService.createWithImage).toHaveBeenCalled();
     });
 

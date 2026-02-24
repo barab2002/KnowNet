@@ -2,6 +2,7 @@ import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/co
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 import * as bcrypt from 'bcrypt';
+import type { StringValue } from 'ms';
 
 @Injectable()
 export class AuthService {
@@ -24,10 +25,12 @@ export class AuthService {
 
   async login(user: any) {
     const payload = { sub: user._id, email: user.email, name: user.name };
+    const accessExpiresIn =
+      (process.env.JWT_ACCESS_EXPIRES_IN || '15m') as StringValue;
     return {
       accessToken: this.jwtService.sign(payload, {
         secret: process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET || 'secretKey',
-        expiresIn: process.env.JWT_ACCESS_EXPIRES_IN || '15m',
+        expiresIn: accessExpiresIn,
       }),
       user: user,
     };
@@ -64,11 +67,13 @@ export class AuthService {
   }
 
   async generateRefreshToken(userId: string) {
+    const refreshExpiresIn =
+      (process.env.JWT_REFRESH_EXPIRES_IN || '30d') as StringValue;
     const refreshToken = this.jwtService.sign(
       { sub: userId },
       {
         secret: process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET || 'secretKey',
-        expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '30d',
+        expiresIn: refreshExpiresIn,
       },
     );
 
@@ -108,11 +113,13 @@ export class AuthService {
       throw new UnauthorizedException('Refresh token expired');
     }
 
+    const refreshExpiresIn =
+      (process.env.JWT_REFRESH_EXPIRES_IN || '30d') as StringValue;
     const newRefreshToken = this.jwtService.sign(
       { sub: user._id },
       {
         secret: process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET || 'secretKey',
-        expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '30d',
+        expiresIn: refreshExpiresIn,
       },
     );
 
