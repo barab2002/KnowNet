@@ -295,23 +295,27 @@ export class PostsService {
   async search(query: string): Promise<{ expandedTags: string[]; results: Array<Record<string, unknown> & { matchedTags: string[] }> }> {
     const expandedTags = await this.aiService.expandSearchQuery(query);
 
-    // Run tag-based search and full-text search in parallel
-    const [tagPosts, textPosts] = await Promise.all([
+    // Run tag-based search and regex content search in parallel (allSettled so one failure doesn't kill the other)
+    const regex = new RegExp(query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'iu');
+    const [tagResult, contentResult] = await Promise.allSettled([
       this.postModel
         .find({ tags: { $in: expandedTags } })
         .populate('authorId', 'name profileImageUrl')
         .lean()
         .exec(),
       this.postModel
-        .find({ $text: { $search: query } }, { score: { $meta: 'textScore' } })
+        .find({ content: { $regex: regex } })
         .populate('authorId', 'name profileImageUrl')
         .lean()
         .exec(),
     ]);
 
+    const tagPosts = tagResult.status === 'fulfilled' ? tagResult.value : [];
+    const contentPosts = contentResult.status === 'fulfilled' ? contentResult.value : [];
+
     // Merge and deduplicate by _id (tag results first for better ranking)
     const seen = new Set<string>();
-    const merged = [...tagPosts, ...textPosts].filter((post) => {
+    const merged = [...tagPosts, ...contentPosts].filter((post) => {
       const id = (post._id as { toString(): string }).toString();
       if (seen.has(id)) return false;
       seen.add(id);
