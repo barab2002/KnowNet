@@ -31,7 +31,22 @@ export class UsersController {
   @Get(':userId')
   @ApiOperation({ summary: 'Get user profile by id' })
   @ApiParam({ name: 'userId', example: 'user-123' })
-  @ApiResponse({ status: 200, description: 'User profile returned' })
+  @ApiResponse({
+    status: 200,
+    description: 'User profile returned',
+    schema: {
+      type: 'object',
+      properties: {
+        _id: { type: 'string', example: 'user-123' },
+        email: { type: 'string', example: 'user@example.com' },
+        name: { type: 'string', example: 'Jane Doe' },
+        bio: { type: 'string', nullable: true },
+        major: { type: 'string', nullable: true },
+        graduationYear: { type: 'string', nullable: true },
+        profileImageUrl: { type: 'string', nullable: true },
+      },
+    },
+  })
   @ApiResponse({ status: 404, description: 'User not found' })
   async getProfile(@Param('userId') userId: string) {
     return this.usersService.findById(userId);
@@ -50,7 +65,19 @@ export class UsersController {
       required: ['_id', 'email', 'name'],
     },
   })
-  @ApiResponse({ status: 201, description: 'User created or retrieved' })
+  @ApiResponse({
+    status: 201,
+    description: 'User created or retrieved',
+    schema: {
+      type: 'object',
+      properties: {
+        _id: { type: 'string', example: 'user-123' },
+        email: { type: 'string', example: 'user@example.com' },
+        name: { type: 'string', example: 'Jane Doe' },
+        profileImageUrl: { type: 'string', nullable: true },
+      },
+    },
+  })
   async createUser(@Body() body: { _id: string; email: string; name: string }) {
     return this.usersService.findOrCreate(body._id, body);
   }
@@ -59,7 +86,22 @@ export class UsersController {
   @ApiOperation({ summary: 'Update user profile' })
   @ApiParam({ name: 'userId', example: 'user-123' })
   @ApiBody({ type: UpdateProfileDto })
-  @ApiResponse({ status: 200, description: 'Profile updated' })
+  @ApiResponse({
+    status: 200,
+    description: 'Profile updated',
+    schema: {
+      type: 'object',
+      properties: {
+        _id: { type: 'string', example: 'user-123' },
+        email: { type: 'string', example: 'user@example.com' },
+        name: { type: 'string', example: 'Jane Doe' },
+        bio: { type: 'string', nullable: true },
+        major: { type: 'string', nullable: true },
+        graduationYear: { type: 'string', nullable: true },
+        profileImageUrl: { type: 'string', nullable: true },
+      },
+    },
+  })
   @ApiResponse({ status: 404, description: 'User not found' })
   async updateProfile(
     @Param('userId') userId: string,
@@ -81,7 +123,17 @@ export class UsersController {
       required: ['image'],
     },
   })
-  @ApiResponse({ status: 200, description: 'Profile image updated' })
+  @ApiResponse({
+    status: 200,
+    description: 'Profile image updated',
+    schema: {
+      type: 'object',
+      properties: {
+        _id: { type: 'string', example: 'user-123' },
+        profileImageUrl: { type: 'string', example: '/uploads/profile-images/profile-123.png' },
+      },
+    },
+  })
   @ApiResponse({ status: 400, description: 'Invalid image upload' })
   @UseInterceptors(
     FileInterceptor('image', {
