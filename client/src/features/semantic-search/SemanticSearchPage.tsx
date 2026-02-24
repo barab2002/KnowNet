@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { searchPosts, SearchResultPost } from '../../api/posts';
+import { PostCard } from '../../components/PostCard';
 
 export const SemanticSearchPage = () => {
   const [query, setQuery] = useState('');
@@ -7,6 +9,18 @@ export const SemanticSearchPage = () => {
   const [expandedTags, setExpandedTags] = useState<string[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+  const [selectedPost, setSelectedPost] = useState<SearchResultPost | null>(null);
+
+  useEffect(() => {
+    if (!selectedPost) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setSelectedPost(null); };
+    document.addEventListener('keydown', onKey);
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = '';
+    };
+  }, [selectedPost]);
 
   const handleSearch = async () => {
     if (!query.trim()) return;
@@ -117,7 +131,8 @@ export const SemanticSearchPage = () => {
             {results.map((post) => (
               <div
                 key={post._id}
-                className="bg-white dark:bg-[#1a2632] rounded-xl p-5 border border-slate-200 dark:border-[#233648] hover:border-primary/50 transition-all group shadow-sm"
+                onClick={() => setSelectedPost(post)}
+                className="bg-white dark:bg-[#1a2632] rounded-xl p-5 border border-slate-200 dark:border-[#233648] hover:border-primary/50 transition-all group shadow-sm cursor-pointer"
               >
                 <div className="flex justify-between items-start mb-3">
                   <div className="flex items-center gap-3">
@@ -229,6 +244,28 @@ export const SemanticSearchPage = () => {
         )}
       </div>
     </div>
+
+    {selectedPost && createPortal(
+      <div className="fixed inset-0 z-[100] flex items-start justify-center p-4 pt-12 overflow-y-auto">
+        {/* Backdrop */}
+        <div
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm"
+          onClick={() => setSelectedPost(null)}
+        />
+        {/* Panel */}
+        <div className="relative w-full max-w-2xl mb-12">
+          <button
+            onClick={() => setSelectedPost(null)}
+            className="absolute -top-8 right-0 flex items-center gap-1 text-white/70 hover:text-white text-sm transition-colors"
+          >
+            <span className="material-symbols-outlined text-[18px]">close</span>
+            Close
+          </button>
+          <PostCard post={selectedPost} onUpdate={() => setSelectedPost(null)} />
+        </div>
+      </div>,
+      document.body
+    )}
   );
 };
 
