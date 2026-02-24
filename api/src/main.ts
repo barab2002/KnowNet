@@ -17,14 +17,32 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app/app.module';
 import cookieParser from 'cookie-parser';
+import * as fs from 'fs';
+
+function getHttpsOptions() {
+  const certPath = process.env.SSL_CERT_PATH;
+  const keyPath = process.env.SSL_KEY_PATH;
+  if (certPath && keyPath && fs.existsSync(certPath) && fs.existsSync(keyPath)) {
+    return {
+      cert: fs.readFileSync(certPath),
+      key: fs.readFileSync(keyPath),
+    };
+  }
+  return null;
+}
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const httpsOptions = getHttpsOptions();
+  const app = await NestFactory.create<NestExpressApplication>(
+    AppModule,
+    httpsOptions ? { httpsOptions } : {},
+  );
   const globalPrefix = 'api';
   app.setGlobalPrefix(globalPrefix);
   app.enableCors({
     origin: process.env.FRONTEND_URL || 'http://localhost:4200',
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   });
   app.use(cookieParser());
 
