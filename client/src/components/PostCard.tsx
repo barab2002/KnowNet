@@ -127,9 +127,18 @@ export const PostCard = React.memo(
     }
   };
 
-  const handleEditSave = async (content: string, image?: File) => {
+  const handleEditSave = async (
+    content: string,
+    image?: File,
+    removeImage?: boolean,
+  ) => {
     try {
-      const updatedPost = await updatePost(post._id, { content }, image, token);
+      const updatedPost = await updatePost(
+        post._id,
+        { content, removeImage },
+        image,
+        token,
+      );
       setLocalPost(updatedPost);
       setLocalSummary(updatedPost.summary);
       setShowEditModal(false);
