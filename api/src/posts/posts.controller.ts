@@ -14,7 +14,14 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Express } from 'express';
-import { ApiBearerAuth, ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { PostsService } from './posts.service';
 import { CreatePostDto } from './dto/create-post.dto';
@@ -172,13 +179,30 @@ export class PostsController {
   @UseGuards(AuthGuard('jwt'))
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update post text (author only)' })
-  @ApiBody({ type: UpdatePostDto })
+  @UseInterceptors(FileInterceptor('image'))
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        content: { type: 'string', example: 'Updated post content' },
+        image: { type: 'string', format: 'binary' },
+      },
+    },
+  })
   async updateContent(
     @Param('id') id: string,
     @Body() body: UpdatePostDto,
     @Req() req,
+    @UploadedFile() image?: Express.Multer.File,
   ) {
-    return this.postsService.updatePostContent(id, req.user._id, body.content);
+    return this.postsService.updatePostContent(
+      id,
+      req.user._id,
+      body.content,
+      image?.buffer,
+      image?.mimetype,
+    );
   }
 
   @Delete(':id')
