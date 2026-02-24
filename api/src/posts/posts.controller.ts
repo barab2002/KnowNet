@@ -13,7 +13,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Express } from 'express';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { PostsService } from './posts.service';
 import { CreatePostDto } from './dto/create-post.dto';
@@ -51,18 +51,42 @@ export class PostsController {
 
   @Post(':id/like')
   @ApiOperation({ summary: 'Toggle like on post' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: { userId: { type: 'string', example: 'user-123' } },
+      required: ['userId'],
+    },
+  })
   async toggleLike(@Param('id') id: string, @Body('userId') userId: string) {
     return this.postsService.toggleLike(id, userId);
   }
 
   @Post(':id/save')
   @ApiOperation({ summary: 'Toggle save post' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: { userId: { type: 'string', example: 'user-123' } },
+      required: ['userId'],
+    },
+  })
   async toggleSave(@Param('id') id: string, @Body('userId') userId: string) {
     return this.postsService.toggleSave(id, userId);
   }
 
   @Post(':id/comment')
   @ApiOperation({ summary: 'Add comment to post' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        userId: { type: 'string', example: 'user-123' },
+        content: { type: 'string', example: 'Great post!' },
+      },
+      required: ['userId', 'content'],
+    },
+  })
   async addComment(
     @Param('id') id: string,
     @Body('userId') userId: string,
@@ -97,8 +121,10 @@ export class PostsController {
 
   @Post()
   @UseGuards(AuthGuard('jwt')) // Enforce login for posting
+  @ApiBearerAuth()
   @UseInterceptors(FileInterceptor('image'))
   @ApiOperation({ summary: 'Create a new post with optional image' })
+  @ApiBody({ type: CreatePostDto })
   @ApiResponse({
     status: 201,
     description: 'The post has been successfully created.',
@@ -142,6 +168,7 @@ export class PostsController {
 
   @Delete(':id')
   @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete a post' })
   async delete(@Param('id') id: string, @Req() req) {
     return this.postsService.delete(id, req.user._id);
