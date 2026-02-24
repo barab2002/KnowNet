@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Post, PostDocument } from './schemas/post.schema';
@@ -78,36 +78,9 @@ export class PostsService {
     this.logger.log(`Starting background AI processing for post ${postId}`);
 
     try {
-      // Generate summary
-      const summary = await this.aiService.generateSummary(content);
-
-      // User-defined hashtags
-      let userTags: string[] = [];
-      const hashtags = content.match(/#(\w+)/g);
-      if (hashtags) {
-        userTags = [...new Set(hashtags.map((tag) => tag.substring(1)))];
-      }
-
-      // AI/Fallback keywords
-      let aiTags: string[] = [];
-      if (userTags.length === 0) {
-        const keywords = content
-          .toLowerCase()
-          .replace(/[^\w\s]/g, '')
-          .split(/\s+/)
-          .filter((word) => word.length > 4)
-          .filter(
-            (word) =>
-              !['about', 'there', 'their', 'would', 'could', 'should'].includes(
-                word,
-              ),
-          );
-        aiTags = [...new Set(keywords)].slice(0, 3);
-        if (aiTags.length === 0) aiTags = ['General', 'Community'];
-      }
-
-      // Combined tags
-      const tags = [...userTags, ...aiTags];
+      const { summary, tags, userTags, aiTags } = await this.buildAiMetadata(
+        content,
+      );
 
       // Update the post
       await this.postModel.findByIdAndUpdate(postId, {
@@ -121,6 +94,66 @@ export class PostsService {
     } catch (error) {
       this.logger.error(`Failed to process AI for post ${postId}`, error);
     }
+  }
+
+  private async buildAiMetadata(content: string) {
+    // Generate summary
+    const summary = await this.aiService.generateSummary(content);
+
+    // User-defined hashtags
+    let userTags: string[] = [];
+    const hashtags = content.match(/#(\w+)/g);
+    if (hashtags) {
+      userTags = [...new Set(hashtags.map((tag) => tag.substring(1)))];
+    }
+
+    // AI/Fallback keywords
+    let aiTags: string[] = [];
+    if (userTags.length === 0) {
+      const keywords = content
+        .toLowerCase()
+        .replace(/[^\w\s]/g, '')
+        .split(/\s+/)
+        .filter((word) => word.length > 4)
+        .filter(
+          (word) =>
+            !['about', 'there', 'their', 'would', 'could', 'should'].includes(
+              word,
+            ),
+        );
+      aiTags = [...new Set(keywords)].slice(0, 3);
+      if (aiTags.length === 0) aiTags = ['General', 'Community'];
+    }
+
+    // Combined tags
+    const tags = [...userTags, ...aiTags];
+
+    return { summary, tags, userTags, aiTags };
+  }
+
+  async updatePostContent(
+    postId: string,
+    userId: string,
+    content: string,
+  ): Promise<Post> {
+    const post = await this.postModel.findById(postId);
+    if (!post) throw new NotFoundException('Post not found');
+
+    if (!post.authorId || post.authorId.toString() !== userId) {
+      throw new ForbiddenException('Unauthorized to edit this post');
+    }
+
+    const { summary, tags, userTags, aiTags } = await this.buildAiMetadata(
+      content,
+    );
+
+    post.content = content;
+    post.summary = summary;
+    post.tags = tags;
+    post.userTags = userTags;
+    post.aiTags = aiTags;
+
+    return post.save();
   }
 
   async toggleLike(postId: string, userId: string): Promise<Post> {
