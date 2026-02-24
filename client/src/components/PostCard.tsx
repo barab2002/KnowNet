@@ -164,9 +164,8 @@ export const PostCard = React.memo(
         throw new Error('Unable to generate summary. Please try again.');
       }
     } catch (err: any) {
-      console.error('Failed to summarize post', err);
-      const msg = err.response?.data?.message || err.message || 'Unknown error';
-      setError(`Failed: ${msg}`);
+      const msg = err.response?.data?.message || err.message || 'Failed to generate summary.';
+      setError(msg);
     } finally {
       setIsSummarizing(false);
     }
@@ -388,14 +387,14 @@ export const PostCard = React.memo(
               onClick={handleSummarize}
               disabled={isSummarizing}
               className="flex items-center gap-1.5 text-slate-500 hover:text-primary transition-colors disabled:opacity-50 relative group"
-              title="Summarize"
+              title={localSummary ? 'Regenerate AI Summary' : 'Generate AI Summary'}
             >
               {isSummarizing ? (
                 <div className="w-6 h-6 flex items-center justify-center">
                   <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
                 </div>
               ) : (
-                <span className="material-symbols-outlined text-xl group-hover:scale-110 transition-transform">
+                <span className={`material-symbols-outlined text-xl group-hover:scale-110 transition-transform ${localSummary ? 'text-primary' : ''}`}>
                   cognition_2
                 </span>
               )}

@@ -32,12 +32,12 @@ export class AiService {
 
     try {
       const model = this.genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
-      const prompt = `Analyze the following post and generate between 5 and 30 relevant topic tags.
+      const prompt = `Analyze the following post and generate between 10 and 30 relevant topic tags.
 Return ONLY a JSON array of lowercase tag strings (1 to 3 words each). No explanation, no markdown, just the raw JSON array.
-Cover the main topics, sub-topics, themes, concepts, and related fields — aim for variety so the post can be found through many different searches.
+You MUST return at least 10 tags. Cover the main topics, sub-topics, themes, concepts, and related fields — aim for variety so the post can be found through many different searches.
 IMPORTANT: Return tags in the SAME language as the post content. If the post is in Hebrew, return Hebrew tags. If in English, return English tags.
-Example for English: ["machine learning", "python", "data science", "neural networks", "ai", "programming", "algorithms", "statistics"]
-Example for Hebrew: ["למידת מכונה", "פייתון", "מדע הנתונים", "רשתות נוירונים", "בינה מלאכותית", "תכנות"]
+Example for English: ["machine learning", "python", "data science", "neural networks", "ai", "programming", "algorithms", "statistics", "deep learning", "model training"]
+Example for Hebrew: ["למידת מכונה", "פייתון", "מדע הנתונים", "רשתות נוירונים", "בינה מלאכותית", "תכנות", "אלגוריתמים", "סטטיסטיקה", "עיבוד נתונים", "מודלים"]
 
 Post content: ${content}`;
 
@@ -97,7 +97,7 @@ Search query: ${query}`;
       .replace(/[^\p{L}\s]/gu, '') // \p{L} matches any Unicode letter including Hebrew
       .split(/\s+/)
       .filter((w) => w.length > 2 && !stopWords.has(w));
-    return [...new Set(words)].slice(0, 5);
+    return [...new Set(words)].slice(0, 10);
   }
 
   async generateEmbedding(text: string): Promise<number[]> {
