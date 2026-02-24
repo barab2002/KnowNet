@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:1
+
 # Build Stage
 FROM node:22-alpine AS builder
 
@@ -5,7 +7,8 @@ WORKDIR /app
 
 # Copy deps
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci
 
 # Copy source
 COPY . .
@@ -24,7 +27,8 @@ ENV NODE_ENV production
 COPY --from=builder /app/dist/api ./
 
 # Install only production dependencies for the specific app
-RUN npm ci --omit=dev
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci --omit=dev
 
 # Expose port
 EXPOSE 3000
