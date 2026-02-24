@@ -19,7 +19,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
 }) => {
   const { user } = useAuth();
   const [postText, setPostText] = useState('');
-  const [image, setImage] = useState<File | undefined>();
+  const [images, setImages] = useState<File[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   const defaultAvatar =
@@ -36,10 +36,10 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
           content: postText,
           authorId: user?._id,
         },
-        image,
+        images,
       );
       setPostText('');
-      setImage(undefined);
+      setImages([]);
       if (onSuccess) onSuccess();
     } catch (error) {
       console.error('Failed to create post:', error);
@@ -87,20 +87,33 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
         </div>
 
         {/* Image Preview */}
-        {image && (
+        {images.length > 0 && (
           <div className="relative mb-2">
-            <img
-              src={URL.createObjectURL(image)}
-              alt="Preview"
-              className="w-full h-48 object-cover rounded-xl border border-slate-200 dark:border-slate-700"
-            />
-            <button
-              type="button"
-              onClick={() => setImage(undefined)}
-              className="absolute top-2 right-2 bg-black/50 text-white rounded-full p-1 hover:bg-black/70 transition-colors"
-            >
-              <span className="material-symbols-outlined">close</span>
-            </button>
+            <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory scroll-smooth">
+              {images.map((image, index) => (
+                <div
+                  key={`${image.name}-${index}`}
+                  className="relative min-w-[220px] snap-start rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700"
+                >
+                  <img
+                    src={URL.createObjectURL(image)}
+                    alt="Preview"
+                    className="w-full h-40 object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setImages((prev) =>
+                        prev.filter((_, idx) => idx !== index),
+                      )
+                    }
+                    className="absolute top-2 right-2 bg-black/60 text-white rounded-full w-7 h-7 flex items-center justify-center hover:bg-black/80 transition-colors"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
@@ -118,14 +131,19 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
                 type="file"
                 accept="image/png,image/jpeg,image/jpg,image/gif,image/webp"
                 className="hidden"
+                multiple
                 onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file && file.type.startsWith('image/')) {
-                    setImage(file);
-                  } else {
+                  const files = Array.from(e.target.files || []);
+                  const valid = files.filter((file) =>
+                    file.type.startsWith('image/'),
+                  );
+                  if (files.length !== valid.length) {
                     alert(
-                      'Please upload an image file only (PNG, JPG, GIF, WEBP)',
+                      'Please upload image files only (PNG, JPG, GIF, WEBP)',
                     );
+                  }
+                  if (valid.length > 0) {
+                    setImages((prev) => [...prev, ...valid]);
                   }
                 }}
               />
