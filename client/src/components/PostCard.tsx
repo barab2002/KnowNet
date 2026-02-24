@@ -30,6 +30,7 @@ export const PostCard = React.memo(
   const [localSummary, setLocalSummary] = useState(post.summary);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const carouselRef = React.useRef<HTMLDivElement | null>(null);
 
   // Sync local summary if prop updates (e.g. from parent refresh)
   React.useEffect(() => {
@@ -61,6 +62,22 @@ export const PostCard = React.memo(
 
   const isLiked = localPost.likes.includes(currentUserId);
   const isSaved = localPost.savedBy.includes(currentUserId);
+
+  const images = React.useMemo(() => {
+    if (localPost.imageUrls && localPost.imageUrls.length > 0) {
+      return localPost.imageUrls;
+    }
+    if (localPost.imageUrl) {
+      return [localPost.imageUrl];
+    }
+    return [];
+  }, [localPost.imageUrl, localPost.imageUrls]);
+
+  const scrollImages = (direction: 'left' | 'right') => {
+    if (!carouselRef.current) return;
+    const offset = direction === 'left' ? -420 : 420;
+    carouselRef.current.scrollBy({ left: offset, behavior: 'smooth' });
+  };
 
   const handleLike = async () => {
     try {
@@ -234,14 +251,46 @@ export const PostCard = React.memo(
             {localPost.content}
           </p>
 
-          {localPost.imageUrl && (
-            <div className="rounded-xl overflow-hidden mb-4 border border-slate-100 dark:border-slate-800">
-              <img
-                src={localPost.imageUrl}
-                alt="Post attachment"
-                className="w-full h-auto object-cover max-h-[500px]"
-                loading="lazy"
-              />
+          {images.length > 0 && (
+            <div className="relative rounded-xl overflow-hidden mb-4 border border-slate-100 dark:border-slate-800">
+              <div
+                ref={carouselRef}
+                className="flex gap-3 overflow-x-auto snap-x snap-mandatory scroll-smooth"
+              >
+                {images.map((image, index) => (
+                  <div
+                    key={`${image}-${index}`}
+                    className="min-w-full snap-start"
+                  >
+                    <img
+                      src={image}
+                      alt="Post attachment"
+                      className="w-full h-auto object-cover max-h-[500px]"
+                      loading="lazy"
+                    />
+                  </div>
+                ))}
+              </div>
+              {images.length > 1 && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => scrollImages('left')}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full bg-white/80 text-slate-700 w-9 h-9 flex items-center justify-center shadow"
+                    title="Previous image"
+                  >
+                    ‹
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => scrollImages('right')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-white/80 text-slate-700 w-9 h-9 flex items-center justify-center shadow"
+                    title="Next image"
+                  >
+                    ›
+                  </button>
+                </>
+              )}
             </div>
           )}
 
