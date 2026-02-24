@@ -18,6 +18,45 @@ export class AiService {
     }
   }
 
+  async generateTags(content: string): Promise<string[]> {
+    if (!this.genAI) {
+      return this.extractKeywordsFallback(content);
+    }
+
+    try {
+      const model = this.genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+      const prompt = `Analyze the following post and generate 3 to 5 relevant topic tags.
+Return ONLY a JSON array of short, lowercase tag strings (1 to 3 words each). No explanation, no markdown, just the raw JSON array.
+Example: ["machine learning", "python", "data science"]
+
+Post content: ${content}`;
+
+      const result = await model.generateContent(prompt);
+      const text = result.response.text().trim().replace(/```json|```/g, '').trim();
+      const tags = JSON.parse(text) as string[];
+
+      if (!Array.isArray(tags)) throw new Error('Response is not an array');
+      return tags.slice(0, 5).map((t) => t.toLowerCase().trim());
+    } catch (error) {
+      this.logger.error('Failed to generate tags with Gemini', error);
+      return this.extractKeywordsFallback(content);
+    }
+  }
+
+  private extractKeywordsFallback(content: string): string[] {
+    const stopWords = new Set([
+      'about', 'there', 'their', 'would', 'could', 'should', 'which',
+      'these', 'those', 'where', 'while', 'after', 'before', 'other',
+      'every', 'first', 'being', 'since', 'under', 'until', 'using',
+    ]);
+    const words = content
+      .toLowerCase()
+      .replace(/[^\w\s]/g, '')
+      .split(/\s+/)
+      .filter((w) => w.length > 4 && !stopWords.has(w));
+    return [...new Set(words)].slice(0, 5);
+  }
+
   async generateSummary(
     content: string,
     accessToken?: string,

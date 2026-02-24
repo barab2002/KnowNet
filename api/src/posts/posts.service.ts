@@ -99,36 +99,20 @@ export class PostsService {
   }
 
   private async buildAiMetadata(content: string) {
-    // Generate summary
-    const summary = await this.aiService.generateSummary(content);
+    // Run summary and tag generation in parallel
+    const [summary, aiTags] = await Promise.all([
+      this.aiService.generateSummary(content),
+      this.aiService.generateTags(content),
+    ]);
 
-    // User-defined hashtags
-    let userTags: string[] = [];
+    // User-defined hashtags extracted from content
     const hashtags = content.match(/#(\w+)/g);
-    if (hashtags) {
-      userTags = [...new Set(hashtags.map((tag) => tag.substring(1)))];
-    }
+    const userTags = hashtags
+      ? [...new Set(hashtags.map((tag) => tag.substring(1).toLowerCase()))]
+      : [];
 
-    // AI/Fallback keywords
-    let aiTags: string[] = [];
-    if (userTags.length === 0) {
-      const keywords = content
-        .toLowerCase()
-        .replace(/[^\w\s]/g, '')
-        .split(/\s+/)
-        .filter((word) => word.length > 4)
-        .filter(
-          (word) =>
-            !['about', 'there', 'their', 'would', 'could', 'should'].includes(
-              word,
-            ),
-        );
-      aiTags = [...new Set(keywords)].slice(0, 3);
-      if (aiTags.length === 0) aiTags = ['General', 'Community'];
-    }
-
-    // Combined tags
-    const tags = [...userTags, ...aiTags];
+    // Combined tags: user hashtags first, then AI tags (deduplicated)
+    const tags = [...new Set([...userTags, ...aiTags])];
 
     return { summary, tags, userTags, aiTags };
   }
