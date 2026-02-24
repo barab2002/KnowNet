@@ -37,7 +37,7 @@ export const PostCard = React.memo(
     setLocalSummary(post.summary);
   }, [post]);
 
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const currentUserId = user?._id || '';
 
   // Handle Author Info (Support both populated object and legacy string ID)
@@ -129,7 +129,7 @@ export const PostCard = React.memo(
 
   const handleEditSave = async (content: string, image?: File) => {
     try {
-      const updatedPost = await updatePost(post._id, { content }, image);
+      const updatedPost = await updatePost(post._id, { content }, image, token);
       setLocalPost(updatedPost);
       setLocalSummary(updatedPost.summary);
       setShowEditModal(false);
