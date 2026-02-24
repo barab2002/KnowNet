@@ -13,13 +13,24 @@ services:
     restart: always
 
   api:
-    image: ghcr.io/barab2002/knownet-api:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: knownet-api:local
     container_name: knownet-api
     env_file: .env.production
     restart: always
 
   client:
-    image: ghcr.io/barab2002/knownet-client:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.client
+      args:
+        VITE_FIREBASE_API_KEY: ${VITE_FIREBASE_API_KEY}
+        VITE_FIREBASE_AUTH_DOMAIN: ${VITE_FIREBASE_AUTH_DOMAIN}
+        VITE_FIREBASE_PROJECT_ID: ${VITE_FIREBASE_PROJECT_ID}
+        VITE_FIREBASE_APP_ID: ${VITE_FIREBASE_APP_ID}
+    image: knownet-client:local
     container_name: knownet-client
     depends_on:
       - api
