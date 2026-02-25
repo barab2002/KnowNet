@@ -204,8 +204,8 @@ export const getAllTags = async (): Promise<string[]> => {
   return response.data;
 };
 
-export const summarizePost = async (postId: string): Promise<Post> => {
-  const response = await axios.post<Post>(`${API_URL}/${postId}/summarize`);
+export const summarizePost = async (postId: string, model?: string): Promise<Post> => {
+  const response = await axios.post<Post>(`${API_URL}/${postId}/summarize`, model ? { model } : {});
   return response.data;
 };
 
