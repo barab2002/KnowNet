@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createPost } from '../api/posts';
 import { useAuth } from '../contexts/AuthContext';
+import { RichTextEditor } from './RichTextEditor';
 
 const TAG_MODELS = [
   { id: 'llama-3.3-70b-versatile', label: 'Llama 3.3 70B', description: 'Best quality' },
@@ -26,13 +27,15 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
   className = '',
 }) => {
   const { user } = useAuth();
-  const [postText, setPostText] = useState('');
+  const [postHtml, setPostHtml] = useState('');
   const [images, setImages] = useState<File[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [aiWarning, setAiWarning] = useState(false);
   const [tagModel, setTagModel] = useState<TagModelId>('llama-3.3-70b-versatile');
   const [modelMenuOpen, setModelMenuOpen] = useState(false);
   const modelMenuRef = useRef<HTMLDivElement>(null);
+  // Key used to fully reset the TipTap editor after a successful post
+  const [editorKey, setEditorKey] = useState(0);
 
   useEffect(() => {
     if (!modelMenuOpen) return;
@@ -50,20 +53,21 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!postText.trim()) return;
+    if (!postHtml.trim()) return;
 
     try {
       setIsLoading(true);
       const result = await createPost(
         {
-          content: postText,
+          content: postHtml,
           authorId: user?._id,
           tagModel,
         },
         images,
       );
-      setPostText('');
+      setPostHtml('');
       setImages([]);
+      setEditorKey((k) => k + 1); // reset editor
       if ((result as any).aiQuotaExceeded) {
         setAiWarning(true);
         setTimeout(() => setAiWarning(false), 6000);
@@ -101,24 +105,19 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
               {user?.name || 'User'}
             </p>
             <p className="flex items-center gap-1 text-slate-500 text-xs">
-              <span className="material-symbols-outlined text-[14px]">
-                public
-              </span>
+              <span className="material-symbols-outlined text-[14px]">public</span>
               Public
             </p>
           </div>
         </div>
 
-        {/* Text Input */}
-        <div className="relative">
-          <textarea
-            value={postText}
-            onChange={(e) => setPostText(e.target.value)}
-            placeholder={placeholder}
-            dir="auto"
-            className="w-full min-h-[120px] p-4 bg-slate-50 dark:bg-[#233648]/50 border-none rounded-xl resize-none focus:ring-2 focus:ring-primary/20 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-[#92adc9] transition-all"
-          />
-        </div>
+        {/* Rich Text Editor */}
+        <RichTextEditor
+          key={editorKey}
+          value=""
+          onChange={setPostHtml}
+          placeholder={placeholder}
+        />
 
         {/* Image Preview */}
         {images.length > 0 && (
@@ -180,9 +179,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
                     file.type.startsWith('image/'),
                   );
                   if (files.length !== valid.length) {
-                    alert(
-                      'Please upload image files only (PNG, JPG, GIF, WEBP)',
-                    );
+                    alert('Please upload image files only (PNG, JPG, GIF, WEBP)');
                   }
                   if (valid.length > 0) {
                     setImages((prev) => [...prev, ...valid]);
@@ -233,7 +230,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
             )}
             <button
               type="submit"
-              disabled={!postText.trim() || isLoading}
+              disabled={!postHtml.trim() || isLoading}
               className="flex items-center gap-2 px-8 py-2 rounded-xl bg-primary text-white font-bold shadow-lg shadow-primary/30 hover:shadow-primary/40 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed transition-all min-w-[90px] justify-center"
             >
               {isLoading ? (

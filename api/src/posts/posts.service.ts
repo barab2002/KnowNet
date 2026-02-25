@@ -8,7 +8,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Post, PostDocument } from './schemas/post.schema';
 import { CreatePostDto } from './dto/create-post.dto';
-import { DEFAULT_TAG_MODEL, TagModelId } from '../ai/ai.service';
+import { DEFAULT_TAG_MODEL, TagModelId, stripHtml } from '../ai/ai.service';
 import { UsersService } from '../users/users.service';
 import { AiService } from '../ai/ai.service';
 
@@ -602,7 +602,7 @@ export class PostsService {
 
     // 5. Advanced Scoring Fusion
     const scored = allCandidates.map((post) => {
-      const content = (post.content || '').toLowerCase();
+      const content = stripHtml(post.content || '').toLowerCase();
       // Deduplicate: post.tags is already the union of aiTags + userTags,
       // so combining all three creates duplicates that inflate the match counter.
       const postTags = [

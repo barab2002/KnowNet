@@ -65,6 +65,20 @@ Example Good Tags:
 - English: ["calculus", "derivatives", "chain-rule", "university-level"]
 - Hebrew: ["חשבון-דיפרנציאלי", "נגזרות", "כלל-השרשרת", "אקדמיה"]`;
 
+/** Strip HTML tags so AI always receives plain text, regardless of storage format. */
+export function stripHtml(html: string): string {
+  return html
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 function extractJsonArray(raw: string): string[] {
   try {
     // Try to find the first array in the response, handling markdown fences
@@ -132,15 +146,16 @@ export class AiService {
     content: string,
     model: TagModelId = DEFAULT_TAG_MODEL,
   ): Promise<string[]> {
+    const plainText = stripHtml(content);
     try {
       const modelInfo = TAG_MODELS.find((m) => m.id === model);
       if (modelInfo?.provider === 'gemini') {
-        return await this.generateTagsGemini(content, model);
+        return await this.generateTagsGemini(plainText, model);
       }
-      return await this.generateTagsGroq(content, model);
+      return await this.generateTagsGroq(plainText, model);
     } catch (error) {
       this.logger.error('Tag generation failed, using keyword fallback', error);
-      return this.extractKeywordsFallback(content);
+      return this.extractKeywordsFallback(plainText);
     }
   }
 
@@ -378,11 +393,12 @@ Rules:
     content: string,
     model: SummaryModelId = DEFAULT_SUMMARY_MODEL,
   ): Promise<string> {
+    const plainText = stripHtml(content);
     const modelInfo = SUMMARY_MODELS.find((m) => m.id === model);
     if (modelInfo?.provider === 'groq') {
-      return this.generateSummaryGroq(content, model);
+      return this.generateSummaryGroq(plainText, model);
     }
-    return this.generateSummaryGemini(content, model);
+    return this.generateSummaryGemini(plainText, model);
   }
 
   private async generateSummaryGemini(
