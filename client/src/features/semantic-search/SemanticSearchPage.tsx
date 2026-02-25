@@ -126,6 +126,15 @@ export const SemanticSearchPage = () => {
   };
 
   // Green = exact word boundary match, yellow = partial/contains match
+  const stripHtml = (value: string): string => {
+    if (!value) return '';
+    if (typeof window !== 'undefined' && 'DOMParser' in window) {
+      const doc = new DOMParser().parseFromString(value, 'text/html');
+      return (doc.body.textContent || '').trim();
+    }
+    return value.replace(/<[^>]*>/g, '').trim();
+  };
+
   const renderHighlighted = (text: string): React.ReactNode => {
     if (!queryWords.length) return text;
 
@@ -375,9 +384,9 @@ export const SemanticSearchPage = () => {
                     className="text-lg font-bold mb-2 hover:text-primary transition-colors line-clamp-2 cursor-pointer"
                     onClick={() => setSelectedPost(post)}
                   >
-                    {post.content.length > 100
-                      ? post.content.substring(0, 100) + '...'
-                      : post.content}
+                    {stripHtml(post.content).length > 100
+                      ? stripHtml(post.content).substring(0, 100) + '...'
+                      : stripHtml(post.content)}
                   </h4>
 
                   {post.summary && (
@@ -415,7 +424,7 @@ export const SemanticSearchPage = () => {
                         {post.textMatchExact ? 'Direct Match' : 'Partial Match'}
                       </div>
                       <p className="text-sm text-slate-700 dark:text-slate-300 font-mono">
-                        {renderHighlighted(post.matchSnippet)}
+                        {renderHighlighted(stripHtml(post.matchSnippet))}
                       </p>
                     </div>
                   )}
