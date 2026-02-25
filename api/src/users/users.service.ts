@@ -92,13 +92,20 @@ export class UsersService {
     newToken: string,
     newExpiresAt: Date,
   ) {
-    return this.userModel.findOneAndUpdate(
+    // MongoDB cannot use $set with positional $ and $push on the same array in one operation.
+    // Split into two sequential updates to avoid ConflictingUpdateOperators (code 40).
+    await this.userModel.findOneAndUpdate(
       { _id: userId, 'refreshTokens.token': oldToken },
       {
         $set: {
           'refreshTokens.$.revoked': true,
           'refreshTokens.$.replacedByToken': newToken,
         },
+      },
+    );
+    return this.userModel.findByIdAndUpdate(
+      userId,
+      {
         $push: {
           refreshTokens: {
             token: newToken,
