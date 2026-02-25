@@ -79,8 +79,14 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
 
   return (
     <div
-      className={`bg-white/80 dark:bg-card-dark/80 backdrop-blur-sm rounded-2xl p-6 shadow-xl shadow-slate-200/50 dark:shadow-none border border-white dark:border-slate-800 transition-all ${className}`}
+      className={`relative bg-white/80 dark:bg-card-dark/80 backdrop-blur-sm rounded-2xl p-6 shadow-xl shadow-slate-200/50 dark:shadow-none border border-white dark:border-slate-800 transition-all ${className}`}
     >
+      {isLoading && (
+        <div className="absolute inset-0 z-10 rounded-2xl bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm flex flex-col items-center justify-center gap-3">
+          <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+          <p className="text-sm font-semibold text-primary animate-pulse">Generating tags &amp; posting…</p>
+        </div>
+      )}
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         {/* User Info */}
         <div className="flex items-center gap-3 mb-2">
@@ -228,9 +234,16 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
             <button
               type="submit"
               disabled={!postText.trim() || isLoading}
-              className="px-8 py-2 rounded-xl bg-primary text-white font-bold shadow-lg shadow-primary/30 hover:shadow-primary/40 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              className="flex items-center gap-2 px-8 py-2 rounded-xl bg-primary text-white font-bold shadow-lg shadow-primary/30 hover:shadow-primary/40 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed transition-all min-w-[90px] justify-center"
             >
-              {isLoading ? 'Posting...' : 'Post'}
+              {isLoading ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin shrink-0" />
+                  <span>Posting…</span>
+                </>
+              ) : (
+                'Post'
+              )}
             </button>
           </div>
         </div>

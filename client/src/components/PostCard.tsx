@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   Post,
   toggleLike,
@@ -13,6 +13,13 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { Modal } from './Modal';
 import { EditPostModal } from './EditPostModal';
+
+const SUMMARY_MODELS = [
+  { id: 'llama-3.3-70b-versatile', label: 'Llama 3.3 70B',  description: 'Best quality' },
+  { id: 'llama-3.1-8b-instant',    label: 'Llama 3.1 8B',   description: 'Fastest' },
+  { id: 'gemini-2.0-flash',        label: 'Gemini Flash',   description: 'Google' },
+] as const;
+type SummaryModelId = typeof SUMMARY_MODELS[number]['id'];
 
 interface PostCardProps {
   post: Post;
@@ -29,6 +36,9 @@ export const PostCard = React.memo(
     const [commentsLoaded, setCommentsLoaded] = useState(false);
     const [isLoadingComments, setIsLoadingComments] = useState(false);
     const [isSummarizing, setIsSummarizing] = useState(false);
+    const [summaryModel, setSummaryModel] = useState<SummaryModelId>('llama-3.3-70b-versatile');
+    const [summaryModelMenuOpen, setSummaryModelMenuOpen] = useState(false);
+    const summaryModelMenuRef = useRef<HTMLDivElement>(null);
     const [error, setError] = useState<string | null>(null);
     // Use local state for optimistic/immediate updates, sync with prop
     const [localPost, setLocalPost] = useState(post);
@@ -45,6 +55,18 @@ export const PostCard = React.memo(
       setCommentsLoaded(false);
       setComments([]);
     }, [post]);
+
+    // Close summary model menu on outside click
+    React.useEffect(() => {
+      if (!summaryModelMenuOpen) return;
+      const handler = (e: MouseEvent) => {
+        if (summaryModelMenuRef.current && !summaryModelMenuRef.current.contains(e.target as Node)) {
+          setSummaryModelMenuOpen(false);
+        }
+      };
+      document.addEventListener('mousedown', handler);
+      return () => document.removeEventListener('mousedown', handler);
+    }, [summaryModelMenuOpen]);
 
     const { user, token } = useAuth();
     const currentUserId = user?._id || '';
@@ -159,8 +181,9 @@ export const PostCard = React.memo(
     const handleSummarize = async () => {
       try {
         setIsSummarizing(true);
+        setSummaryModelMenuOpen(false);
         setError(null);
-        const updatedPost = await summarizePost(post._id);
+        const updatedPost = await summarizePost(post._id, summaryModel);
 
         if (updatedPost && updatedPost.summary) {
           setLocalSummary(updatedPost.summary);
@@ -395,26 +418,48 @@ export const PostCard = React.memo(
                 </span>
               </button>
 
-              <button
-                onClick={handleSummarize}
-                disabled={isSummarizing}
-                className="flex items-center gap-1.5 text-slate-500 hover:text-primary transition-colors disabled:opacity-50 relative group"
-                title={
-                  localSummary ? 'Regenerate AI Summary' : 'Generate AI Summary'
-                }
-              >
-                {isSummarizing ? (
-                  <div className="w-6 h-6 flex items-center justify-center">
-                    <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+              {/* AI Summary button + model picker */}
+              <div className="flex items-center gap-0.5 relative" ref={summaryModelMenuRef}>
+                <button
+                  onClick={handleSummarize}
+                  disabled={isSummarizing}
+                  className="flex items-center gap-1 text-slate-500 hover:text-primary transition-colors disabled:opacity-50 group"
+                  title={localSummary ? 'Regenerate AI Summary' : 'Generate AI Summary'}
+                >
+                  {isSummarizing ? (
+                    <div className="w-5 h-5 flex items-center justify-center">
+                      <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                    </div>
+                  ) : (
+                    <span className={`material-symbols-outlined text-xl group-hover:scale-110 transition-transform ${localSummary ? 'text-primary' : ''}`}>
+                      cognition_2
+                    </span>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSummaryModelMenuOpen((o) => !o)}
+                  title="Choose AI model for summary"
+                  className="flex items-center text-slate-400 hover:text-primary transition-colors px-0.5"
+                >
+                  <span className="material-symbols-outlined text-[14px]">expand_more</span>
+                </button>
+                {summaryModelMenuOpen && (
+                  <div className="absolute bottom-full left-0 mb-1 z-50 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg overflow-hidden min-w-[180px]">
+                    {SUMMARY_MODELS.map((m) => (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onClick={() => { setSummaryModel(m.id); setSummaryModelMenuOpen(false); }}
+                        className={`w-full text-left px-4 py-2.5 text-sm transition-colors hover:bg-primary/10 ${summaryModel === m.id ? 'text-primary font-semibold' : 'text-slate-700 dark:text-slate-200'}`}
+                      >
+                        <span className="block font-medium">{m.label}</span>
+                        <span className="block text-xs text-slate-400">{m.description}</span>
+                      </button>
+                    ))}
                   </div>
-                ) : (
-                  <span
-                    className={`material-symbols-outlined text-xl group-hover:scale-110 transition-transform ${localSummary ? 'text-primary' : ''}`}
-                  >
-                    cognition_2
-                  </span>
                 )}
-              </button>
+              </div>
 
               <div className="flex-1"></div>
               <button
