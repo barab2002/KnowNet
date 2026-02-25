@@ -102,8 +102,8 @@ export class PostsController {
     description: 'Post with summary',
     schema: postResponseSchema,
   })
-  async summarize(@Param('id') id: string) {
-    return this.postsService.summarizePost(id);
+  async summarize(@Param('id') id: string, @Body() body: { model?: string }) {
+    return this.postsService.summarizePost(id, undefined, body?.model);
   }
 
   @Post(':id/like')
