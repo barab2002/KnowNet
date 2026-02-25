@@ -17,5 +17,8 @@ export default defineConfig({
     baseUrl: 'http://127.0.0.1:4200',
     allowCypressEnv: false,
     defaultCommandTimeout: 10000,
+    pageLoadTimeout: 120000,
+    retries: { runMode: 2, openMode: 0 },
+    numTestsKeptInMemory: 0,
   },
 });

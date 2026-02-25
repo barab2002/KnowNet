@@ -1,3 +1,4 @@
+export {};
 const userId = 'user-commentsuserknownetdev';
 
 const mockPost = {
@@ -12,10 +13,23 @@ const mockPost = {
   createdAt: new Date().toISOString(),
 };
 
+const mockProfile = {
+  _id: userId,
+  email: 'comments-user@knownet.dev',
+  name: 'Comments User',
+  bio: '',
+  major: '',
+  graduationYear: '',
+  profileImageUrl: undefined,
+  joinedDate: new Date().toISOString(),
+};
+
 describe('comments', () => {
   beforeEach(() => {
     cy.viewport(1280, 900);
     cy.intercept('GET', '/api/posts*', { posts: [mockPost], total: 1 }).as('getPosts');
+    // Stub profile hydration so AuthContext doesn't make a real network request
+    cy.intercept('GET', `/api/users/${userId}`, mockProfile).as('getProfile');
     cy.login('comments-user@knownet.dev', 'password');
     cy.wait('@getPosts');
   });
@@ -48,7 +62,11 @@ describe('comments', () => {
     cy.wait('@getComments');
 
     cy.get('input[placeholder="Write a comment..."]').type('Great E2E comment!');
-    cy.contains('button', 'Post').click();
+    // Scope to the comment form's submit button, not CreatePostForm's "Post" button
+    cy.get('input[placeholder="Write a comment..."]')
+      .parent()
+      .contains('button', 'Post')
+      .click();
     cy.wait('@addComment');
   });
 

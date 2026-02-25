@@ -1,3 +1,4 @@
+export {};
 describe('auth — register form validation', () => {
   beforeEach(() => {
     cy.viewport(1280, 900);

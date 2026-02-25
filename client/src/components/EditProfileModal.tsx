@@ -72,7 +72,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+        <form noValidate onSubmit={handleSubmit} className="p-6 space-y-6">
           {/* Name */}
           <div>
             <label className="block text-sm font-bold mb-2" htmlFor="name">

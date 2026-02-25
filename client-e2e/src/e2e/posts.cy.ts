@@ -1,3 +1,4 @@
+export {};
 const userId = 'user-postsuserknownetdev';
 
 const mockPost = {
@@ -12,10 +13,24 @@ const mockPost = {
   createdAt: new Date().toISOString(),
 };
 
+const mockProfile = {
+  _id: userId,
+  email: 'posts-user@knownet.dev',
+  name: 'Posts User',
+  bio: '',
+  major: '',
+  graduationYear: '',
+  profileImageUrl: undefined,
+  joinedDate: new Date().toISOString(),
+};
+
 describe('posts', () => {
   beforeEach(() => {
     cy.viewport(1280, 900);
+    // Stub posts feed
     cy.intercept('GET', '/api/posts*', { posts: [mockPost], total: 1 }).as('getPosts');
+    // Stub profile hydration so AuthContext doesn't fire a real network request
+    cy.intercept('GET', `/api/users/${userId}`, mockProfile).as('getProfile');
     cy.login('posts-user@knownet.dev', 'password');
     cy.wait('@getPosts');
   });
@@ -28,7 +43,7 @@ describe('posts', () => {
     cy.intercept('GET', '/api/posts*', { posts: [], total: 0 }).as('getEmptyPosts');
     cy.visit('/');
     cy.wait('@getEmptyPosts');
-    cy.contains('No posts yet').should('be.visible');
+    cy.contains('h3', 'No posts yet').should('be.visible');
   });
 
   it('can like a post', () => {
@@ -56,11 +71,20 @@ describe('posts', () => {
   });
 
   it('can create a post', () => {
-    const newPost = { ...mockPost, _id: 'post-e2e-new', content: 'New post from E2E' };
+    const newPost = {
+      ...mockPost,
+      _id: 'post-e2e-new',
+      content: 'New post from E2E',
+    };
     cy.intercept('POST', '/api/posts', newPost).as('createPost');
 
-    cy.get('[contenteditable="true"]').first().click().type('New post from E2E');
-    cy.get('[data-testid="create-post-submit"]').click();
+    cy.get('[data-testid="rich-text-editor"] [contenteditable="true"]')
+      .first()
+      .click()
+      .type('New post from E2E');
+    cy.get('[data-testid="create-post-submit"]')
+      .should('not.be.disabled')
+      .click();
     cy.wait('@createPost');
   });
 });
