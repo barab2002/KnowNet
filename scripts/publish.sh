@@ -8,6 +8,11 @@
 # ─────────────────────────────────────────────────────────────────────────────
 set -euo pipefail
 
+# Enable BuildKit so --mount=type=cache in Dockerfiles actually works,
+# and layer caching is preserved between runs (npm ci becomes near-instant
+# after the first build as long as package-lock.json hasn't changed).
+export DOCKER_BUILDKIT=1
+
 # ── Config ────────────────────────────────────────────────────────────────────
 REGISTRY="ghcr.io"
 OWNER="barab2002"
