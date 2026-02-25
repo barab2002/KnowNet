@@ -268,6 +268,7 @@ export const PostCard = React.memo(
     return (
       <>
         <article
+          data-testid="post-card"
           className={`bg-white dark:bg-card-dark rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden hover:border-primary/50 transition-all duration-400 ${isDeleting ? 'opacity-0 scale-95 -translate-y-2' : 'opacity-100 scale-100 translate-y-0'}`}
         >
           <div className="p-5">
@@ -418,6 +419,7 @@ export const PostCard = React.memo(
 
             <div className="flex items-center gap-6 pt-4 border-t border-slate-100 dark:border-slate-800">
               <button
+                data-testid="post-like-btn"
                 onClick={handleLike}
                 className={`flex items-center gap-1.5 transition-colors ${isLiked ? 'text-red-500' : 'text-slate-500 hover:text-red-500'}`}
               >
@@ -429,6 +431,7 @@ export const PostCard = React.memo(
                 </span>
               </button>
               <button
+                data-testid="post-comments-btn"
                 onClick={handleToggleComments}
                 className="flex items-center gap-1.5 text-slate-500 hover:text-primary transition-colors"
               >
@@ -485,6 +488,7 @@ export const PostCard = React.memo(
 
               <div className="flex-1"></div>
               <button
+                data-testid="post-save-btn"
                 onClick={handleSave}
                 className={`flex items-center gap-1.5 transition-colors ${isSaved ? 'text-primary' : 'text-slate-500 hover:text-primary'}`}
               >
