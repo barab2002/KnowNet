@@ -15,5 +15,7 @@ export default defineConfig({
       ciBaseUrl: 'http://127.0.0.1:4200',
     }),
     baseUrl: 'http://127.0.0.1:4200',
+    allowCypressEnv: false,
+    defaultCommandTimeout: 10000,
   },
 });
