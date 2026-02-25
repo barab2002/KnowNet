@@ -12,3 +12,40 @@
   background: #233648;
   border-radius: 10px;
 }
+
+/* ── TipTap rich-text editor ─────────────────────────────────────── */
+.tiptap-editor .ProseMirror {
+  min-height: 120px;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  outline: none;
+}
+.tiptap-editor .ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: #94a3b8;
+  pointer-events: none;
+  float: left;
+  height: 0;
+}
+
+/* ── Post content rendering ───────────────────────────────────────── */
+.post-content { line-height: 1.7; }
+.post-content h1 { font-size: 1.25rem; font-weight: 700; margin: 0.75rem 0 0.25rem; }
+.post-content h2 { font-size: 1.1rem;  font-weight: 700; margin: 0.75rem 0 0.25rem; }
+.post-content h3 { font-size: 1rem;    font-weight: 600; margin: 0.5rem 0 0.25rem; }
+.post-content p  { margin-bottom: 0.5rem; }
+.post-content p:last-child { margin-bottom: 0; }
+.post-content ul { list-style-type: disc;    padding-left: 1.5rem; margin-bottom: 0.5rem; }
+.post-content ol { list-style-type: decimal; padding-left: 1.5rem; margin-bottom: 0.5rem; }
+.post-content li { margin-bottom: 0.125rem; }
+.post-content strong { font-weight: 700; }
+.post-content em { font-style: italic; }
+.post-content u  { text-decoration: underline; }
+.post-content blockquote {
+  border-left: 3px solid #137fec55;
+  padding-left: 0.75rem;
+  margin: 0.5rem 0;
+  font-style: italic;
+  color: #64748b;
+}
+.dark .post-content blockquote { color: #94a3b8; }
