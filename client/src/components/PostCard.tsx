@@ -1,4 +1,5 @@
 import React, { useRef, useState } from 'react';
+import DOMPurify from 'dompurify';
 import {
   Post,
   toggleLike,
@@ -13,6 +14,32 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { Modal } from './Modal';
 import { EditPostModal } from './EditPostModal';
+
+/** Detect TipTap/HTML content vs. legacy plain text */
+function isRichHtml(content: string): boolean {
+  return /^<(p|h[1-6]|ul|ol|blockquote|div|figure)[\s>]/.test(content.trim());
+}
+
+/** Render post content: HTML posts get sanitized HTML, legacy posts get plain text */
+function PostContent({ content }: { content: string }) {
+  if (isRichHtml(content)) {
+    return (
+      <div
+        className="post-content text-[15px] mb-4"
+        dir="auto"
+        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content) }}
+      />
+    );
+  }
+  return (
+    <p
+      className="text-slate-800 dark:text-slate-200 text-[15px] leading-relaxed mb-4 whitespace-pre-wrap"
+      dir="auto"
+    >
+      {content}
+    </p>
+  );
+}
 
 const SUMMARY_MODELS = [
   { id: 'llama-3.3-70b-versatile', label: 'Llama 3.3 70B',  description: 'Best quality' },
@@ -318,12 +345,7 @@ export const PostCard = React.memo(
               </div>
             )}
 
-            <p
-              className="text-slate-800 dark:text-slate-200 text-[15px] leading-relaxed mb-4"
-              dir="auto"
-            >
-              {localPost.content}
-            </p>
+            <PostContent content={localPost.content} />
 
             {images.length > 0 && (
               <div className="relative rounded-xl overflow-hidden mb-4 border border-slate-100 dark:border-slate-800 bg-slate-100/30 dark:bg-slate-900/30 max-h-[220px] w-full flex items-center justify-center">
