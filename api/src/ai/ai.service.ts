@@ -26,6 +26,30 @@ export const TAG_MODELS = [
 export type TagModelId = (typeof TAG_MODELS)[number]['id'];
 export const DEFAULT_TAG_MODEL: TagModelId = 'llama-3.3-70b-versatile';
 
+export const SUMMARY_MODELS = [
+  {
+    id: 'llama-3.3-70b-versatile',
+    label: 'Llama 3.3 70B',
+    provider: 'groq',
+    description: 'Best quality',
+  },
+  {
+    id: 'llama-3.1-8b-instant',
+    label: 'Llama 3.1 8B',
+    provider: 'groq',
+    description: 'Fastest',
+  },
+  {
+    id: 'gemini-2.0-flash',
+    label: 'Gemini Flash',
+    provider: 'gemini',
+    description: 'Google',
+  },
+] as const;
+
+export type SummaryModelId = (typeof SUMMARY_MODELS)[number]['id'];
+export const DEFAULT_SUMMARY_MODEL: SummaryModelId = 'llama-3.3-70b-versatile';
+
 const TAXONOMIST_SYSTEM = `You are an expert content taxonomist for KnowNet, a student knowledge platform.
 Your task is to extract highly relevant, search-optimized tags from the following post content.
 
@@ -352,21 +376,30 @@ Rules:
 
   async generateSummary(
     content: string,
-    accessToken?: string,
+    model: SummaryModelId = DEFAULT_SUMMARY_MODEL,
+  ): Promise<string> {
+    const modelInfo = SUMMARY_MODELS.find((m) => m.id === model);
+    if (modelInfo?.provider === 'groq') {
+      return this.generateSummaryGroq(content, model);
+    }
+    return this.generateSummaryGemini(content, model);
+  }
+
+  private async generateSummaryGemini(
+    content: string,
+    model: string,
   ): Promise<string> {
     if (!this.genAI) {
       return 'No API key configured — summary unavailable.';
     }
 
     try {
-      const model = this.genAI.getGenerativeModel({
-        model: 'gemini-2.0-flash',
-      });
+      const geminiModel = this.genAI.getGenerativeModel({ model });
       const prompt = `You are a helpful assistant. Please provide a concise, one-sentence summary of the following content: ${content}`;
-      const result = await model.generateContent(prompt);
+      const result = await geminiModel.generateContent(prompt);
       const generatedText = result.response.text();
       if (!generatedText) throw new Error('empty response');
-      this.logger.log('Summary generated successfully');
+      this.logger.log(`Summary generated successfully via Gemini (${model})`);
       return generatedText;
     } catch (error) {
       if (error instanceof Error && error.message.includes('429')) {
@@ -377,7 +410,39 @@ Rules:
           HttpStatus.TOO_MANY_REQUESTS,
         );
       }
-      this.logger.error('Failed to generate summary', error);
+      this.logger.error('Failed to generate summary via Gemini', error);
+      throw new HttpException(
+        'Failed to generate summary. Please try again.',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  private async generateSummaryGroq(
+    content: string,
+    model: string,
+  ): Promise<string> {
+    if (!this.groq) {
+      return 'No Groq API key configured — summary unavailable.';
+    }
+
+    try {
+      const completion = await this.groq.chat.completions.create({
+        model,
+        messages: [
+          {
+            role: 'user',
+            content: `You are a helpful assistant. Please provide a concise, one-sentence summary of the following content: ${content}`,
+          },
+        ],
+        temperature: 0.3,
+      });
+      const generatedText = completion.choices[0]?.message?.content ?? '';
+      if (!generatedText) throw new Error('empty response');
+      this.logger.log(`Summary generated successfully via Groq (${model})`);
+      return generatedText;
+    } catch (error) {
+      this.logger.error('Failed to generate summary via Groq', error);
       throw new HttpException(
         'Failed to generate summary. Please try again.',
         HttpStatus.INTERNAL_SERVER_ERROR,
