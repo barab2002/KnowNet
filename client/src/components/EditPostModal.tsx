@@ -1,5 +1,6 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { Modal } from './Modal';
+import { RichTextEditor } from './RichTextEditor';
 
 interface EditPostModalProps {
   isOpen: boolean;
@@ -24,6 +25,7 @@ export const EditPostModal: React.FC<EditPostModalProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [removedImageUrls, setRemovedImageUrls] = useState<string[]>([]);
+  const [editorKey, setEditorKey] = useState(0);
   const carouselRef = useRef<HTMLDivElement | null>(null);
 
   React.useEffect(() => {
@@ -31,6 +33,7 @@ export const EditPostModal: React.FC<EditPostModalProps> = ({
       setContent(initialContent);
       setSelectedImages([]);
       setRemovedImageUrls([]);
+      setEditorKey((k) => k + 1);
     }
   }, [isOpen, initialContent]);
 
@@ -58,22 +61,14 @@ export const EditPostModal: React.FC<EditPostModalProps> = ({
   }, [previews]);
 
   const images = useMemo(() => {
-    const items: {
-      key: string;
-      src: string;
-      type: 'current' | 'new';
-    }[] = [];
+    const items: { key: string; src: string; type: 'current' | 'new' }[] = [];
     initialImageUrls
       .filter((url) => !removedImageUrls.includes(url))
       .forEach((url) => {
         items.push({ key: url, src: url, type: 'current' });
       });
     previews.forEach((preview, index) => {
-      items.push({
-        key: `${preview.url}-${index}`,
-        src: preview.url,
-        type: 'new',
-      });
+      items.push({ key: `${preview.url}-${index}`, src: preview.url, type: 'new' });
     });
     return items;
   }, [initialImageUrls, previews, removedImageUrls]);
@@ -105,24 +100,25 @@ export const EditPostModal: React.FC<EditPostModalProps> = ({
       <div className="space-y-4">
         <div>
           <label className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-            Post text
+            Post content
           </label>
-          <textarea
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            rows={6}
-            className="mt-2 w-full rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-2 text-sm focus:ring-2 focus:ring-primary focus:border-primary"
-            placeholder="Update your post text..."
-            dir="auto"
-          />
-          <div className="mt-1 text-xs text-slate-400 flex justify-between">
-            <span>Editing updates text and image</span>
-            <span>{trimmed.length} chars</span>
+          <div className="mt-2">
+            <RichTextEditor
+              key={editorKey}
+              value={initialContent}
+              onChange={setContent}
+              placeholder="Update your post..."
+              minHeight="160px"
+            />
+          </div>
+          <div className="mt-1 text-xs text-slate-400 text-right">
+            {trimmed.replace(/<[^>]+>/g, '').length} chars
           </div>
         </div>
+
         <div>
           <label className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-            Post image
+            Post images
           </label>
           <div className="mt-2 space-y-2">
             <div className="relative">
@@ -181,10 +177,7 @@ export const EditPostModal: React.FC<EditPostModalProps> = ({
                     type="button"
                     onClick={() => scrollCarousel('left')}
                     className="ml-1 rounded-full bg-white/80 text-slate-700 w-7 h-7 flex items-center justify-center shadow"
-                    title="Scroll left"
-                  >
-                    ‹
-                  </button>
+                  >‹</button>
                 </div>
               )}
               {images.length > 1 && (
@@ -193,23 +186,16 @@ export const EditPostModal: React.FC<EditPostModalProps> = ({
                     type="button"
                     onClick={() => scrollCarousel('right')}
                     className="mr-1 rounded-full bg-white/80 text-slate-700 w-7 h-7 flex items-center justify-center shadow"
-                    title="Scroll right"
-                  >
-                    ›
-                  </button>
+                  >›</button>
                 </div>
               )}
             </div>
             {images.length === 0 && (
               <p className="text-xs text-slate-400">No image attached.</p>
             )}
-            {images.length > 1 && (
-              <p className="text-[11px] text-slate-400">
-                Scroll horizontally to switch between images.
-              </p>
-            )}
           </div>
         </div>
+
         <div className="flex justify-end gap-3">
           <button
             onClick={onClose}
@@ -220,9 +206,16 @@ export const EditPostModal: React.FC<EditPostModalProps> = ({
           <button
             onClick={handleSave}
             disabled={isDisabled || isSaving}
-            className="px-4 py-2 rounded-lg bg-primary text-white hover:bg-primary/90 disabled:opacity-50 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white hover:bg-primary/90 disabled:opacity-50 transition-colors"
           >
-            {isSaving ? 'Saving...' : 'Save changes'}
+            {isSaving ? (
+              <>
+                <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                <span>Saving…</span>
+              </>
+            ) : (
+              'Save changes'
+            )}
           </button>
         </div>
       </div>
