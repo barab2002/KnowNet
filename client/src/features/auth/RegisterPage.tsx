@@ -58,7 +58,9 @@ export const RegisterPage = () => {
       if (code === 'auth/email-already-in-use') {
         setErrors({ general: 'An account with this email already exists.' });
       } else if (code === 'auth/weak-password') {
-        setErrors({ general: 'Password is too weak. Please choose a stronger password.' });
+        setErrors({
+          general: 'Password is too weak. Please choose a stronger password.',
+        });
       } else {
         setErrors({ general: 'Registration failed. Please try again.' });
       }
@@ -83,7 +85,7 @@ export const RegisterPage = () => {
 
         {/* Register Form */}
         <div className="bg-white dark:bg-[#192633] rounded-2xl shadow-xl border border-slate-200 dark:border-[#324d67] p-8">
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form noValidate onSubmit={handleSubmit} className="space-y-5">
             {/* General Error */}
             {errors.general && (
               <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 px-4 py-3 rounded-lg text-sm">

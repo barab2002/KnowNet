@@ -220,6 +220,8 @@ export const SemanticSearchPage = () => {
                 <input
                   ref={inputRef}
                   className="form-input flex w-full min-w-0 flex-1 border-none bg-transparent focus:ring-0 px-4 text-lg font-normal placeholder:text-slate-400 dark:placeholder:text-[#92adc9]"
+                  inputMode="search"
+                  data-testid="semantic-search-input"
                   placeholder="Ask anything... or type # for tag autocomplete"
                   value={query}
                   onChange={(e) => handleQueryChange(e.target.value)}

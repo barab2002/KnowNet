@@ -1,6 +1,10 @@
 export default {
   displayName: 'api',
   testEnvironment: 'node',
+  reporters: [
+    'default',
+    ['jest-stare', { resultDir: '../../jest-stare', reportTitle: 'KnowNet API Tests', inlineFiles: true, openReport: true }],
+  ],
   transform: {
     '^.+\\.[tj]s$': ['ts-jest', { tsconfig: '<rootDir>/tsconfig.spec.json' }],
   },

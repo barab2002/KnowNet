@@ -28,6 +28,21 @@ Cypress.Commands.add('login', (email, password) => {
     token: `mock-jwt-token-${Date.now()}`,
   };
 
+  // Global intercept for user profile to avoid 404 during AuthProvider's profile hydration
+  cy.intercept('GET', `/api/users/${userId}`, {
+    _id: userId,
+    email,
+    name: email.split('@')[0],
+    profileImageUrl: undefined,
+    bio: 'E2E Test User',
+    major: 'Computer Science',
+    graduationYear: '2026',
+    joinedDate: new Date().toISOString(),
+    postsCount: 0,
+    likesReceived: 0,
+    aiSummariesCount: 0,
+  }).as('globalUserProfile');
+
   // Seed auth *before* the app bootstraps to avoid the ProtectedRoute redirect race.
   cy.visit('/', {
     onBeforeLoad(win) {
@@ -43,7 +58,9 @@ Cypress.Commands.add('login', (email, password) => {
   cy.window({ log: false }).then((win) => {
     const errors = (win as any).__e2eConsoleErrors as string[] | undefined;
     if (errors && errors.length > 0) {
-      throw new Error(`Runtime errors detected:\n${errors.slice(0, 10).join('\n')}`);
+      throw new Error(
+        `Runtime errors detected:\n${errors.slice(0, 10).join('\n')}`,
+      );
     }
   });
 

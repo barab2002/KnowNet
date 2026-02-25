@@ -1,3 +1,4 @@
+export {};
 describe('navigation', () => {
   beforeEach(() => {
     cy.viewport(1280, 900);

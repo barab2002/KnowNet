@@ -46,3 +46,6 @@ vite.config.*.timestamp*
 .env.production
 api/uploads/
 logs/
+
+# Claude local settings
+.claude/
