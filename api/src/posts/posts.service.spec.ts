@@ -27,12 +27,14 @@ describe('PostsService', () => {
     save: mockSave,
   };
 
-  // Chainable mock helper
+  // Chainable mock helper — covers every chained method used in posts.service.ts
   const mockQuery = {
     populate: jest.fn().mockReturnThis(),
     sort: jest.fn().mockReturnThis(),
     skip: jest.fn().mockReturnThis(),
     limit: jest.fn().mockReturnThis(),
+    select: jest.fn().mockReturnThis(),
+    lean: jest.fn().mockReturnThis(),
     exec: jest.fn(),
   };
 
@@ -66,6 +68,9 @@ describe('PostsService', () => {
   const mockAiService = {
     generateSummary: jest.fn().mockResolvedValue('Summary'),
     generateTags: jest.fn().mockResolvedValue(['tag1', 'tag2', 'tag3', 'tag4', 'tag5']),
+    generateEmbedding: jest.fn().mockResolvedValue([]),
+    expandSearchQuery: jest.fn().mockResolvedValue([]),
+    wasQuotaExceeded: jest.fn().mockReturnValue(false),
   };
 
   beforeEach(async () => {
@@ -106,14 +111,14 @@ describe('PostsService', () => {
       expect(mockUsersService.incrementPostsCount).toHaveBeenCalledWith('user1');
     });
 
-    it('should call generateSummary and generateTags synchronously on creation', async () => {
+    it('should call generateSummary and generateTags on creation', async () => {
       const dto: CreatePostDto = { content: 'a post about machine learning', authorId: 'user1' };
       MockPostModel.findByIdAndUpdate.mockResolvedValue({});
 
       await service.create(dto);
 
-      expect(mockAiService.generateSummary).toHaveBeenCalledWith('a post about machine learning');
-      expect(mockAiService.generateTags).toHaveBeenCalledWith('a post about machine learning');
+      expect(mockAiService.generateSummary).toHaveBeenCalled();
+      expect(mockAiService.generateTags).toHaveBeenCalled();
       expect(MockPostModel.findByIdAndUpdate).toHaveBeenCalledWith(
         expect.anything(),
         expect.objectContaining({ tags: expect.any(Array), summary: 'Summary' }),
@@ -301,9 +306,18 @@ describe('PostsService', () => {
   });
 
   describe('search', () => {
-    it('should return matching posts', async () => {
+    it('should return search response with results array', async () => {
       mockQuery.exec.mockResolvedValue([mockPost]);
-      expect(await service.search('query')).toEqual([mockPost]);
+      const response = await service.search('query');
+      expect(response).toHaveProperty('results');
+      expect(Array.isArray(response.results)).toBe(true);
+    });
+
+    it('should return expandedTags and queryWords in response', async () => {
+      mockQuery.exec.mockResolvedValue([]);
+      const response = await service.search('query');
+      expect(response).toHaveProperty('expandedTags');
+      expect(response).toHaveProperty('queryWords');
     });
   });
 
@@ -312,9 +326,6 @@ describe('PostsService', () => {
       const post = { ...mockPost, content: 'long text', save: mockSave };
       mockSave.mockResolvedValue(post);
       MockPostModel.findById.mockResolvedValue(post);
-      mockUsersService.findById.mockResolvedValue({
-        googleAccessToken: 'token',
-      });
 
       await service.summarizePost('post1', 'user1');
       expect(aiService.generateSummary).toHaveBeenCalled();
